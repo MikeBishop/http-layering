@@ -1,4 +1,4 @@
----
+﻿---
 title: Decomposing the Hypertext Transfer Protocol
 abbrev: Decomposing HTTP
 docname: draft-bishop-decomposing-http-latest
@@ -56,500 +56,325 @@ of one or more of these components.
 Introduction        {#problems}
 ============
 
-NAT (Network Address Translator) Traversal may require TURN
-(Traversal Using Relays around NAT)
-{{I-D.ietf-behave-turn}}
-functionality in certain
-cases that are not unlikely to occur.  There is little
-incentive to deploy TURN servers, except by those who need
-them — who may not be in a position to deploy a new protocol
-on an Internet-connected node, in particular not one with
-deployment requirements as high as those of TURN.
+The Hypertext Transfer Protocol defines a very flexible
+tool set enabling client applications to make requests
+of a server for content or action. This general protocol
+was conceived for "the web," interconnected pages of
+Hypertext Markup Language (HTML) and associated resources
+used to render the HTML, but has since been used as a
+general-purpose application transport. Server APIs are
+commonly exposed as REST APIs, accessed over HTTP.
 
-"STUN/TURN using PHP in Despair" is a highly deployable
-protocol for obtaining TURN-like functionality, while also
-providing the most important function of STUN
-{{RFC5389}}.
+HTTP/1.0 was a text-based protocol which did not specify
+its underlying transport, but made certain implicit
+assumptions (in-order, reliable delivery) that have
+typically bound it to TCP.  HTTP/1.1
+expands on the TCP binding, introducing connection
+management concepts into the HTTP layer.
 
-The high degree of deployability is achieved by making STuPiD
-a Web service, implementable in any Web application deployment
-scheme.  As PHP appears to be the solution of choice for
-avoiding deployment problems in the Web world, a PHP-based
-sample implementation of STuPiD is presented in {{figimpl}} in {{impl}}.
-(This single-page script has been tested with a free-of-charge
-web hoster, so it should be deployable by literally everyone.)
+HTTP/2 replaced the simple text-based protocol with a binary
+framing.  Conceptually, much of what was introduced in
+HTTP/2 represents implementation of new transport services
+on top of TCP due to the difficulty in deploying modifications
+to TCP on the Internet.  The working group's charter to
+maintain HTTP's broad applicability meant that there were very
+minor changes in how HTTP surfaces to applications.
 
+Other efforts have mapped HTTP or a subset of it to various
+transport protocols besides TCP -- HTTP can be implemented
+over SCTP, and useful profiles of HTTP have been mapped to
+UDP in various ways (HTTP-M, CoAP, QUIC).  With the publication
+of HTTP/2 over TCP, the working group is beginning to consider
+how a mapping to a non-TCP transport would
+function.  In order to frame this conversation, common terms
+must be defined.
 
-The Need for Standardization   {#need}
-----------------------------
+# The Semantic Layer
 
-If STuPiD is so easy to deploy, why standardize on it?
-First of all, STuPiD server implementations will be done by
-other people than the clients making use of the service.
-Clearly communicating between these communities is a good
-idea, in particular if there are security considerations.
+At the most fundamental level, the semantic layer of HTTP consists
+of a client's ability to request some action of a server and be informed
+of the outcome of that action.  HTTP defines a number of possible
+actions (methods) the client might request of the server, but permits the
+list of actions to be extended.
 
-Having one standard form of STuPiD service instead of one
-specific to each kind of client also creates an incentive
-for optimized implementations.
+A client's request consists of a desired action (HTTP method) and a
+resource on which that action is to be taken (path).  The server 
+responds which a status code which informs the client of the result
+of the request -- the outcome of the action or the reason the action
+was not performed.  Actions may or may not be idempotent or safe.
 
-Finally, where STuPiD becomes part of a client standard
-(such as a potential extension to XMPP's in-band byte-stream
-protocol as hinted in {{xmpp}}), it is a good
-thing if STuPiD is already defined.
+Each message (request or response) has associated metadata, called
+"headers" which provide additional information about the operation.
+In a request this might inclued client identification, credentials
+authorizing the client to request the action, or preferences about
+how the client would prefer the server handle the action.  In a
+response, this might include information about the resulting data,
+details about how the server performed the action, or details of
+the reason the server declined to perform the action.
 
-Hence, this document focuses on the definition of the STuPiD
-service itself, tries to make this as general as possible
-without increasing complexity or cost and leaves the details
-of any client standards to future documents.
+The headers are structured key-value pairs, with rules defining how
+keys which occur multiple times should be handled.  Due to artifacts
+of existing usage, these rules vary from key to key.  For similar
+legacy reasons, there is no uniform structure of the values across
+all keys.  Keys are case-insensitive ASCII strings, while values
+are sequences of octets.  Many headers are defined by the HTTP
+RFCs, but the space is not constrained.
 
+Each message, whether request or response, also has an optional body.  The
+presence and content of the body will vary based on the action requested.
 
-Basic Protocol Operation   {#ops}
-========================
+# Transport Services Required {#transport}
 
-The STuPiD protocol will typically be used with application
-instances that first attempt to obtain connectivity using
-mechanisms similar to those described in the STUN
-specification {{RFC5389}}.  However, with STuPiD,
-STUN is not really needed for TCP, as was demonstrated in
-previous STUN-like implementations {{STUNT}}.
-Instead, STuPiD (like {{STUNT}}) provides a
-simple Web service that
-echoes the remote address and port of an incoming HTTP
-request; in most cases, this is enough to get the job done.
+The HTTP Semantic Layer depends on the availability
+of the following services:
 
-In case no connection can be established with this simple
-STUN(T)-like mechanism, a TURN-like relay is needed as a final
-fall-back.
-The STuPiD protocol supports this, but solely provides a way
-for the data to be
-relayed.  STuPiD relies on an out-of-band channel to notify
-the peer whenever new data is available (synchronization signal).
-See {{xmpp}} for one likely example of such an
-out-of-band channel.
-(Note that the out-of-band channel may have a much lower
-throughput than the STuPiD relay channel — this is exactly
-the case in the example provided in {{xmpp}},
-where the out-of-band channel is typically throughput-limited
-to on the order of a few kilobits per second.)
+  - Request metadata
+  - Parallelism
+  - Partial delivery
+  - Flow control and throttling
+  - Reliabile delivery
+  - In-order delivery
+  - Security
 
-By designing the STuPiD web service in such a way that it can
-be implemented by a simple PHP script such as that presented
-in {{impl}}, it is easy to deploy by those who
-need the STuPiD services.
-The combination of the low-throughput out-of-band channel for
-synchronization and the STuPiD web service for bulk data
-relaying is somewhat silly but gets the job done.
+No transport discussed previously actually provides all
+of the services on which the HTTP Semantic Layer depends.
+In the following table, we can see multiple transports
+over which HTTP has been deployed and the services they do
+or do not offer.
 
-The STuPiD data relay is implemented as follows (see {{figops}}):
+# The Transport Adaptation Layer {#transport-adaptation}
 
-1. Peer A, the source of the data to be relayed, stores a chunk of
-   data at the STuPiD server using an opaque identifier, the "chunk
-   identifier". How that chunk identifier is chosen is local to Peer
-   A; it could be composed of a random session id and a sequence number.
+In order to compensate for the services not provided by a given
+underlying transport, each mapping of HTTP onto a new transport
+must define an intermediate layer, implementing the missing
+services in order to enable the mapping.
 
-2. Peer A notifies the receiver of the data, Peer
-   B, that a new data chunk is available, specifying the URI needed
-   for retrieval.
-   This notification is provided through an out-out-band channel.
-   (As an optimization for multiple consecutive transfers, A might
-   inform B once of a constant prefix of that URI and only send a
-   varying part such as a sequence number in each notification —
-   this is something to be decided in the client-client notification
-   protocol.)
+Some of these have been wholesale imports of other protocols
+which exist to provide such an adaptation layer (TLS) while
+others have been entirely new protocol machinery constructed
+specifically to serve as an adaptation layer (HTTP/2 framing).
+Others take the form of implementation-level meta-protocol behavior
+(simultaneous connections handled in parallel).
+Because the existence of this adaptation layer has not been
+explicitly defined in the past, a clean separation
+has not always been maintained between the adaptation layer
+and either the transport or the semantic layer.
 
-3. Peer B retrieves the data from the STuPiD server using the URI
-   provided by Peer A.
+Some adaptation layers are so complex and fully-featured that
+the transport layer plus the adaptation layer can be conceptually
+treated as a new transport.  For example, QUIC was originally
+designed as a transport adaptation layer for HTTP over UDP,
+but is now being refactored into a general-purpose transport
+layer for multiple protocols.  Such a refactoring will require
+separating the services QUIC provides that are general to all
+applications and the services which exist purely to enable a
+mapping of HTTP to QUIC.
 
-Note that the data transfer mechanism is one-way, i.e. to send
-data in the other direction as well, Peer B needs to perform
-the same steps using a STuPiD server at the same or a
-different location.
+## Security
 
-~~~~~~~~~~
+Integrity and confidentiality are valuable services for
+communication over the Internet, and HTTP is no exception.
+HTTP originally defined no additional integrity or
+confidentiality mechanisms for the TCP mapping, leaving
+the integrity and confidentiality levels to those provided
+by the network transport.  These may be minimal (TCP
+checksums) or rich (IPsec) depending on the network
+environment.
 
+For situations where the network does not provide integrity
+and confidentiality guarantees sufficient to the content,
+RFC ###FINDME### defines the use of TLS as an additional
+component of the adaptation layer in HTTP/1.1.  HTTP/2
+directly defines how TLS may be used to provide these
+services as part of its adaptation layer.
 
-        STuPiD   ```````````````````````````````,
-        Script   <----------------------------. ,
-                                              | ,
-          ^ ,                                 | ,
-          | ,                                 | ,
-    (1)   | ,                                 | ,  (3)
-    POST  | ,                                 | ,  GET
-          | ,                                 | ,
-          | v                                 | v
+TLS itself requires reliable, in-order delivery.  When
+those services are provided by the adaptation layer itself
+rather than the underlying transport, the adaptation layer
+must either provide those services to TLS as well as HTTP
+(as in QUIC) or a variant of TLS which does not require
+those services must be substituted (DTLS, as used in CoAP).
 
-        Peer A   ----------------------->   Peer B
-                           (2)
-                       out-of-band
-                       Notification
-~~~~~~~~~~
-{: #figops title="STuPiD Protocol Operation"}
+## Message Framing and Request Metadata
 
+Each request and response contains metadata about the message
+(headers) and an optional body.  Since underlying transports
+provide only a bytestream or message abstraction for each request,
+each HTTP mapping must define a way to separate the components of
+a message and package the metadata into this projection.
 
-Protocol Definition
-===================
+### HTTP/1.x and Text-Based Headers
 
-Terminology          {#Terminology}
------------
-In this document, the key words "MUST", "MUST NOT", "REQUIRED",
-"SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY",
-and "OPTIONAL" are to be interpreted as described in BCP 14, RFC 2119
-{{RFC2119}} and indicate requirement levels for compliant STuPiD
-implementations.
+HTTP/1.x projects a message as an ASCII block, with specific octets
+used to delimit the boundaries between message components.  Within
+the portion of the message dedicated to headers, the key-value pairs
+are expressed as text, with the ':' character and whitespace separating
+the key from the value.
 
+TODO:  Mention line folding?
 
-Discovering External IP Address and Port
-----------------------------------------
+### HTTP/2 and HPACK
 
-A client may discover its external IP address and the port
-required for port prediction by performing a HTTP GET
-request to a STuPiD server. The STuPiD server MUST reply
-with the remote address and remote port in the following
-format:
+HTTP/2 projects the requested action into the set of headers,
+then uses separate HEADERS and DATA frames to delimit the boundary
+between metadata and message body.
 
-host ":" port
+Because the text-based transfer of repetitive headers represented
+a major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK, a
+custom compression scheme which operates on key-value pairs rather
+than text blocks.  HTTP/2 frame types which transport headers
+always carry compressed blocks rather than a key-value dictionary.
 
-where 'host' and 'port' are defined as in {{RFC3986}}.
+## Parallelism and Throttling
 
+Because a client will often need each server to perform multiple
+actions at once, HTTP requires the ability to deliver requests
+in parallel and allow the server to respond to each request
+as the actions complete.  In order to avoid overwhelming
+either the transport or the server, HTTP also requires a
+mechanism to limit the number of simultaneous requests
+a client may have outstanding.
 
-Storing Data
-------------
+### HTTP/1.x and Multiple Connections
 
-Data chunks are stored using the POST request of HTTP. The
-STuPiD server MUST support one URI parameter which is passed
-as query-string:
+HTTP/1.0 used a very simple multi-request model -- each request
+was made on a separate TCP connection, and all requests were
+handled independently.  This had the drawback that TCP connection
+setup was required with each request and flow control almost
+never exited the slow-start phase, limiting performance.
 
-'chid':  A unique ID identifying the data chunk to be stored.
-The ID SHOULD be chosen from the characters of the base64url
-set {{RFC4648}}.
+In HTTP/1.1, connections are reused -- when the end of a response
+has been received, a new request can be sent.  Management of
+the connection was performed by the addition of new HTTP headers
+which did not actually refer to the message but the underlying
+transport (e.g. "Connection: close").
 
-The payload of the POST request MUST be the data to be
-stored. The 'Content-Type' SHOULD be
-'application/octet-stream', although a STuPiD server
-implementation SHOULD simply ignore the 'Content-Type' as a
-client implementation may be restricted and may not able to
-specify a specific 'Content-Type'.  (E.g., in certain cases,
-the peer may be limited to sending the data as
-multipart-form-encoded — still, the data is stored as a
-byte stream.)
+Throttling of simultaneous requests was fully in the realm of
+implementations, which constrained themselves to opening only
+a limited number of connections.  HTTP/1.1 originally recommended
+two, but later implementations increased this to six by default,
+and more under certain conditions.  Because these were fully
+independent flows, TCP was unable to consider them as a group for
+purposes of congestion control, leading to suboptimal behavior
+on the network.
 
-STuPiD servers may reject data chunks that are larger than
-some predefined limit.
-This maximum size in bytes of each data chunk is RECOMMENDED
-to be 65536 or more.
+There were further attempts to improve the use of TCP in HTTP/1.1.
+HTTP Pipelining allowed the client to eliminate the round-trip that
+was incurred between the end of the server's response to one request
+and the server's receipt of the client's next request.  However,
+pipelining suffers from head-of-line blocking since a request on a
+different connection might complete sooner.  The client's inability
+to predict the length of requested actions limited the usefulness
+of pipelining.
 
-As HTTP already provides data transparency,
-the data chunk SHOULD NOT be encoded using Base64 or any
-other data transparency mechanism; in any case, the STuPiD
-server will not attempt to decode the chunk.
+HTTP Multiplexing allowed the use of a single TCP connection to
+emit multiple requests, which the server could answer in any
+order.  However, this was never broadly deployed because ###WHY NOT?###.
 
-The sender MUST wait for the HTTP response before
-going on to notify the receiver.
+### HTTP/1.1 over SCTP
 
+Because SCTP permits the use of multiple simultaneous streams
+over a single connection, HTTP/1.1 could be mapped with relative
+ease.  Instead of using separate TCP connections, SCTP flows
+could be used to provide a multiplexing layer.  Each flow
+was reused for new requests after the completion of a 
+response, just as HTTP/1.1 used TCP connections.  
+###TODO: CHECK THIS###
+This allowed
+for better flow control performance, since the transport
+could consider all SCTP flows together.
 
-Notification
-------------
+### HTTP/2 Framing Layer
 
-The sender notifies the receiver of the data chunk by passing
-via an out-of-band channel (which is not part of the STuPiD
-protocol):
+HTTP/2 introduced a framing layer than incorporated the concept
+of streams.  Because a very large number of idle streams
+automatically exist at the beginning of each connection,
+each stream can be used for a single request and response.
+One stream is dedicated to the transport of control messages,
+enabling a cleaner separation between metadata about the
+connection from metadata about the separate messages within
+the connection.
 
-The full URL from which the data chunk can be retrieved,
-i.e. the same URL that was used to store the data chunk,
-including the chunk ID parameter.
+## Congestion Control
 
-The exact notification mechanism over the out-of-band channel
-and the definition of a session is dependent on the
-out-of-band channel.  See {{xmpp}} for one
-example of such an out-of-band channel.
+The transport is aware of each concurrent request in HTTP/1.1's
+mappings to TCP and SCTP.  In TCP, because there is only one
+request at a time, and in SCTP because each request occurs on a
+separate flow.  This means that the transport's own congestion
+control services are sufficient.
 
+Because HTTP/2's adaptation layer introduces a concurrency construct
+above the transport, the adaptation layer must also introduce
+a means of flow control to keep the concurrent transactions
+from introducing head-of-line blocking above TCP.
 
-Retrieving Data
----------------
+## Reliabile delivery
 
-The notified peer retrieves the data chunk using a GET request
-with the URL supplied by the sender. The STuPiD server MUST
-set the 'Content-Type' of the returned body to
-'application/octet-stream'.
+There are many ways for a transport to provide reliable
+delivery of messages. This may take the form of loss recovery,
+where the loss of packets is detected and the corresponding
+information retransmitted.  Alternately, a transport may
+proactively send extra information so that the data stream
+is tolerant to some loss -- the full message can be reconstructed
+after receipt of a sufficient fraction of the transmission.
 
+Because TCP and SCTP both provide reliable delivery mechanisms,
+there was no need to introduce new service in this area for HTTP
+mappings.  However, the adaptation layers of HTTP mappings
+over UDP have needed to introduce this concept.
 
-Implementation Notes
-====================
+CoAP dedicates a portion of its message framing to indicating
+whether a given message requires reliability or not.  If
+reliable delivery is required, the recipient acknowledges
+receipt and the sender continues to repeat the message
+until the acknowledgement is received.
 
-A STuPiD server implementation SHOULD delete stored data some
-time after it was stored. It is RECOMMENDED not to delete the
-data before five minutes have elapsed after it was stored.
-Different client protocols will have different reactions to
-data that have been deleted prematurely and cannot be
-retrieved by the notified peer; this may be as trivial as
-packet loss or it may cause a reliable byte-stream to fail
-({{impl}}).
-(TODO: It may be useful to provide some hints in the storing
-POST request.)
+Some applications above HTTP are able to provide their own
+loss-recovery messages, and therefore do not actually require
+the guarantees that HTTP provides.  HTTP over UDP Multicast
+is targeted at such applications, and therefore does not
+provide reliable delivery to applications above it.
 
-STuPiD clients should aggregate data in order to minimize the
-number of requests to the STuPiD server per second.
-The specific aggregation method chosen depends on the data
-rate required (and the maximum chunk size), the latency
-requirements, and the application semantics.
+## In-order delivery
 
-Clearly, it is up to the implementation to decide how the data
-chunks are actually stored.  A sufficiently silly STuPiD server
-implementation might for instance use a MySQL database.
+The sequence numbers used to detect the partial loss of data
+also permit TCP and SCTP to reassemble data in the order it
+was originally sent.
 
+HTTP/2 does not actually require a full
+ordering, but TCP does not offer a way to relax its ordering
+guarantees.  HTTP/2 has two ordering requirements:
 
-Security Considerations
-=======================
+  - All frames on a stream must be delivered to the
+    application in order
+  - All frames bearing header fragments must be
+    delivered to HPACK in order
 
-The security objectives of STuPiD are to be as secure as if
-NAT traversal had succeeded, i.e., an on-path attacker can
-overhear and fake messages, but an off-path attacker cannot.
-If a higher level of security is desired, it should be
-provided on top of the data relayed by STuPiD, e.g. by using
-XTLS {{I-D.meyer-xmpp-e2e-encryption}}.
+UDP mappings of HTTP must define mechanisms to restore the
+original order of message fragments.  HTTPM and CoAP both do
+this by assigning sequence numbers at the adaptation layer
+level.  (TODO:  CHECK THIS)
 
-Much of the security of STuPiD is based on the assumption that
-an off-path attacker cannot guess the chunk identifiers.  A
-suitable source of randomness {{RFC4086}} should
-be used to generate at least a sufficiently large part of the
-chunk identifiers (e.g., the chunk identifier could be a hard
-to guess prefix followed by a serial number).
+# Moving Forward
 
-To protect the STuPiD server against denial of service and
-possibly some forms of theft of service, it is RECOMMENDED
-that the POST side of the STuPiD server be protected by some
-form of authentication such as HTTP authentication.  There is
-little need to protect the GET side.
+The definition of layers within HTTP may initially seem like
+an exercise in abstract software architecture.  However, the
+networks over which we run TCP/IP today look nothing like the
+networks for which TCP/IP was originally designed.  It is the
+clean separation between TCP, IP, and the lower-layer protocols
+which has enabled the continued usefulness of the higher-layer
+protocols as the substrate has changed.
+
+The goal is not merely architectural purity, but modularity.
+HTTP has enjoyed a long life as a higher-layer protocol and is
+useful to many varied applications.  As transports continue to
+evolve, we will almost certainly find ourselves in the position
+of defining a mapping of HTTP onto a new transpont once again.
+With a clear understanding of the HTTP semantic layer and the
+services it requires, we can better scope the requirements
+of a new adaptation layer while reusing the components of
+previous adaptation layers that provide the necessary service
+well in existing implementations.
 
 --- back
-
-
-Examples  {#xmp}
-========
-
-This appendix provides some examples of the STuPiD protocol operation.
-
-~~~~~~~~~~
-   Request:
-
-      GET /stupid.php HTTP/1.0
-      User-Agent: Example/1.11.4
-      Accept: */*
-      Host: example.org
-      Connection: Keep-Alive
-
-   Response:
-
-      HTTP/1.1 200 OK
-      Date: Sun, 05 Jul 2009 00:30:37 GMT
-      Server: Apache/2.2
-      Cache-Control: no-cache, must-revalidate
-      Expires: Sat, 26 Jul 1997 05:00:00 GMT
-      Vary: Accept-Encoding
-      Content-Length: 17
-      Keep-Alive: timeout=1, max=400
-      Connection: Keep-Alive
-      Content-Type: application/octet-stream
-
-      192.0.2.239:36654
-~~~~~~~~~~
-{: #figxmpdisco title="Discovering External IP Address and Port"}
-
-~~~~~~~~~~
-   Request:
-
-      POST /stupid.php?chid=i781hf64-0 HTTP/1.0
-      User-Agent: Example/1.11.4
-      Accept: */*
-      Host: example.org
-      Connection: Keep-Alive
-      Content-Type: application/octet-stream
-      Content-Length: 11
-
-      Hello World
-
-   Response:
-
-      HTTP/1.1 200 OK
-      Date: Sun, 05 Jul 2009 00:20:34 GMT
-      Server: Apache/2.2
-      Cache-Control: no-cache, must-revalidate
-      Expires: Sat, 26 Jul 1997 05:00:00 GMT
-      Vary: Accept-Encoding
-      Content-Length: 0
-      Keep-Alive: timeout=1, max=400
-      Connection: Keep-Alive
-      Content-Type: application/octet-stream
-~~~~~~~~~~
-{: #figxmpstore title="Storing Data"}
-
-~~~~~~~~~~
-   Request:
-
-      GET /stupid.php?chid=i781hf64-0 HTTP/1.0
-      User-Agent: Example/1.11.4
-      Accept: */*
-      Host: example.org
-      Connection: Keep-Alive
-
-   Response:
-
-      HTTP/1.1 200 OK
-      Date: Sun, 05 Jul 2009 00:21:29 GMT
-      Server: Apache/2.2
-      Cache-Control: no-cache, must-revalidate
-      Expires: Sat, 26 Jul 1997 05:00:00 GMT
-      Vary: Accept-Encoding
-      Content-Length: 11
-      Keep-Alive: timeout=1, max=400
-      Connection: Keep-Alive
-      Content-Type: application/octet-stream
-
-      Hello World
-~~~~~~~~~~
-{: #figxmpretr title="Retrieving Data"}
-
-
-Sample Implementation     {#impl}
-=====================
-
-~~~~~~~~~~
-<?php
-header("Cache-Control: no-cache, must-revalidate");
-header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
-header("Content-Type: application/octet-stream");
-
-mysql_connect(localhost, "username", "password");
-mysql_select_db("stupid");
-
-$chid = mysql_real_escape_string($_GET["chid"]);
-
-if ($_SERVER["REQUEST_METHOD"] == "GET") {
-   if (empty($chid)) {
-      echo $_SERVER["REMOTE_ADDR"] . ":" . $_SERVER["REMOTE_PORT"];
-   } elseif ($result = mysql_query("SELECT `data` FROM `Data` " .
-                         "WHERE `chid` = '$chid'")) {
-      if ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-         echo base64_decode($row["data"]);
-      } else {
-         header("HTTP/1.0 404 Not Found");
-      }
-      mysql_free_result($result);
-   } else {
-      header("HTTP/1.0 404 Not Found");
-   }
-} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
-   if (empty($chid)) {
-      header("HTTP/1.0 404 Not Found");
-   } else {
-      mysql_query("DELETE FROM `Data` " .
-                  "WHERE `timestamp` < DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
-      $data = base64_encode(file_get_contents("php://input"));
-      if (!mysql_query("INSERT INTO `Data` (`chid`, `data`) " .
-                       "VALUES ('$chid', '$data')")) {
-         header("HTTP/1.0 403 Bad Request");
-      }
-   }
-} else {
-   header("HTTP/1.0 405 Method Not Allowed");
-   header("Allow: GET, HEAD, POST");
-}
-mysql_close();
-?>
-~~~~~~~~~~
-{: #figimpl title="STuPiD Sample Implementation"}
-
-
-Using XMPP as Out-Of-Band Channel  {#xmpp}
-=================================
-
-XMPP {{I-D.ietf-xmpp-3920bis}} is a good choice for
-an out-of-band channel.
-
-The notification protocol is closely modeled after XMPP's
-In-Band Bytestreams (IBB, see
-http://xmpp.org/extensions/xep-0047.html). Just replace the
-namespace and insert the STuPiD Retrieval URI instead of the
-actual Base64 encoded data, see {{figxmpnots}}.
-(Note that the current proposal redundantly sends a sid and a
-seq as well as the chid composed of these two; it may be
-possible to optimize this, possibly sending the constant prefix
-of the URI once at bytestream creation time.)
-
-Notifications MUST be processed in the order they are
-received. If an out-of-sequence notification is received for a
-particular session (determined by checking the 'seq' attribute),
-then this indicates that a notification has been lost. The
-recipient MUST NOT process such an out-of-sequence notification,
-nor any that follow it within the same session; instead, the
-recipient MUST consider the session invalid.  (Adapted from
-http://xmpp.org/extensions/xep-0047.html#send)
-
-Of course, other methods can be used for setup and teardown, such as Jingle
-(see http://xmpp.org/extensions/xep-0261.html).
-
-~~~~~~~~~~
-      <iq from='romeo@montague.net/orchard'
-          id='jn3h8g65'
-          to='juliet@capulet.com/balcony'
-          type='set'>
-        <open xmlns='urn:xmpp:tmp:stupid'
-              block-size='65536'
-              sid='i781hf64'
-              stanza='iq'/>
-      </iq>
-~~~~~~~~~~
-{: #figxmpcri title="Creating a Bytestream: Initiator requests session"}
-
-
-~~~~~~~~~~
-      <iq from='juliet@capulet.com/balcony'
-          id='jn3h8g65'
-          to='romeo@montague.net/orchard'
-          type='result'/>
-~~~~~~~~~~
-{: #figxmpcrr title="Creating a Bytestream: Responder accepts session"}
-
-
-
-~~~~~~~~~~
-      <iq from='romeo@montague.net/orchard'
-          id='kr91n475'
-          to='juliet@capulet.com/balcony'
-          type='set'>
-        <data xmlns='urn:xmpp:tmp:stupid'
-              seq='0'
-              sid='i781hf64'
-              url='http://example.org/stupid.php?chid=i781hf64-0'/>
-      </iq>
-~~~~~~~~~~
-{: #figxmpnots title="Sending Notifications: Notification in an IQ stanza"}
-
-~~~~~~~~~~
-      <iq from='juliet@capulet.com/balcony'
-          id='kr91n475'
-          to='romeo@montague.net/orchard'
-          type='result'/>
-~~~~~~~~~~
-{: #figxmpnota title="Sending Notifications: Acknowledging notification using IQ"}
-
-~~~~~~~~~~
-      <iq from='romeo@montague.net/orchard'
-          id='us71g45j'
-          to='juliet@capulet.com/balcony'
-          type='set'>
-        <close xmlns='urn:xmpp:tmp:stupid'
-               sid='i781hf64'/>
-      </iq>
-~~~~~~~~~~
-{: #figxmpclor title="Closing the Bytestream: Request"}
-
-~~~~~~~~~~
-      <iq from='juliet@capulet.com/balcony'
-          id='us71g45j'
-          to='romeo@montague.net/orchard'
-          type='result'/>
-~~~~~~~~~~
-{: #figxmpclos title="Closing the Bytestream: Success response"}
 

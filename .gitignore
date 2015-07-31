@@ -9,3 +9,4 @@
 .i-d-template
 venv/
 issues.json
+draft-*.xml
