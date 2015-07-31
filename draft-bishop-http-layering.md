@@ -1,13 +1,13 @@
 ---
-title: STUN/TURN using PHP in Despair
-abbrev: STuPiD
-docname: draft-hartke-xmpp-stupid-latest
-date: 2009-07-05
+title: Decomposing the Hypertext Transfer Protocol
+abbrev: Decomposing HTTP
+docname: draft-bishop-decomposing-http-latest
+date: 2015-07-31
 category: info
 
 ipr: trust200902
-area: General
-workgroup: XMPP Working Group
+area: Applications
+workgroup: HTTPBis Working Group
 keyword: Internet-Draft
 
 stand_alone: yes
@@ -15,22 +15,11 @@ pi: [toc, sortrefs, symrefs]
 
 author:
  -
-    ins: K. Hartke
-    name: Klaus Hartke
-    organization: Universität Bremen TZI
-    email: hartke@tzi.org
- -
-    ins: C. Bormann
-    name: Carsten Bormann
-    org: Universität Bremen TZI
-    street: Postfach 330440
-    city: Bremen
-    code: D-28359
-    country: Germany
-    phone: +49-421-218-63921
-    facsimile: +49-421-218-7000
-    email: cabo@tzi.org
-
+    ins: M. Bishop
+    name: Mike Bishop
+    organization: Microsoft
+    email: michael.bishop@microsoft.com
+ 
 normative:
   RFC2119:
   RFC3986:
@@ -54,17 +43,13 @@ informative:
 
 --- abstract
 
-NAT (Network Address Translator) Traversal may require TURN
-(Traversal Using Relays around NAT) functionality in certain
-cases that are not unlikely to occur.  There is little
-incentive to deploy TURN servers, except by those who need
-them — who may not be in a position to deploy a new protocol
-on an Internet-connected node, in particular not one with
-deployment requirements as high as those of TURN.
-
-"STUN/TURN using PHP in Despair" is a highly deployable
-protocol for obtaining TURN-like functionality, while also
-providing the most important function of STUN.
+The Hypertext Transfer Protocol in its various versions
+combines concepts of both an application and transport-layer
+protocol. As this group contemplates employing alternate
+transport protocols underneath HTTP, this document attempts
+to delineate the boundaries between these functions to define
+a shared vocabulary in discussing the revision and/or replacement
+of one or more of these components.
 
 --- middle
 
