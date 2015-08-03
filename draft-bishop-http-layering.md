@@ -19,16 +19,10 @@ author:
     name: Mike Bishop
     organization: Microsoft
     email: michael.bishop@microsoft.com
- 
-normative:
-  RFC2119:
-  RFC3986:
-  RFC4086:
-  RFC4648:
 
 informative:
-  RFC5389:
-  I-D.ietf-behave-turn:
+  RFC1945:
+  RFC2818:
   STUNT:
     target: http://deusty.blogspot.com/2007/09/stunt-out-of-band-channels.html
     title: STUNT & out-of-band channels
@@ -36,8 +30,6 @@ informative:
       name: Robbie Hanson
       ins: R. Hanson
     date: 2007-09-17
-  I-D.meyer-xmpp-e2e-encryption:
-  I-D.ietf-xmpp-3920bis:
 
 
 
@@ -66,10 +58,18 @@ general-purpose application transport. Server APIs are
 commonly exposed as REST APIs, accessed over HTTP.
 
 HTTP/1.0 was a text-based protocol which did not specify
-its underlying transport, but made certain implicit
-assumptions (in-order, reliable delivery) that have
-typically bound it to TCP.  HTTP/1.1
-expands on the TCP binding, introducing connection
+its underlying transport, but describes the mapping this way:
+
+> On the Internet, HTTP communication generally takes place over TCP/IP
+> connections. The default port is TCP 80 [15], but other ports can be
+> used. This does not preclude HTTP from being implemented on top of
+> any other protocol on the Internet, or on other networks. HTTP only
+> presumes a reliable transport; any protocol that provides such
+> guarantees can be used, and the mapping of the HTTP/1.0 request and
+> response structures onto the transport data units of the protocol in
+> question is outside the scope of this specification.
+
+HTTP/1.1 expands on the TCP binding, introducing connection
 management concepts into the HTTP layer.
 
 HTTP/2 replaced the simple text-based protocol with a binary
@@ -77,8 +77,8 @@ framing.  Conceptually, much of what was introduced in
 HTTP/2 represents implementation of new transport services
 on top of TCP due to the difficulty in deploying modifications
 to TCP on the Internet.  The working group's charter to
-maintain HTTP's broad applicability meant that there were very
-minor changes in how HTTP surfaces to applications.
+maintain HTTP's broad applicability meant that there were few
+or nochanges in how HTTP surfaces to applications.
 
 Other efforts have mapped HTTP or a subset of it to various
 transport protocols besides TCP -- HTTP can be implemented
@@ -101,7 +101,9 @@ A client's request consists of a desired action (HTTP method) and a
 resource on which that action is to be taken (path).  The server 
 responds which a status code which informs the client of the result
 of the request -- the outcome of the action or the reason the action
-was not performed.  Actions may or may not be idempotent or safe.
+was not performed.  Actions may or may not be idempotent or safe, and
+the results may or may not be cached by intermediaries; this is
+defined as part of the HTTP method.
 
 Each message (request or response) has associated metadata, called
 "headers" which provide additional information about the operation.
@@ -109,6 +111,7 @@ In a request this might inclued client identification, credentials
 authorizing the client to request the action, or preferences about
 how the client would prefer the server handle the action.  In a
 response, this might include information about the resulting data,
+modifications to the cacheability of the response,
 details about how the server performed the action, or details of
 the reason the server declined to perform the action.
 
@@ -132,21 +135,29 @@ of the following services:
   - Parallelism
   - Partial delivery
   - Flow control and throttling
-  - Reliabile delivery
+  - Reliable delivery
   - In-order delivery
   - Security
 
-No transport discussed previously actually provides all
-of the services on which the HTTP Semantic Layer depends.
+No transport over which HTTP can be mapped actually provides
+all of the services on which the HTTP Semantic Layer depends.
 In the following table, we can see multiple transports
 over which HTTP has been deployed and the services they do
 or do not offer.
+
+| Transport | Request metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
+|-----------|------------------|-------------|------------------|--------------|----------|----------|--------|
+| TCP       |                  |             |        X         |      X       |     X    |    X     |        |
+| UDP       |                  |             |        X         |              |          |          |        |
+| SCTP      |                  |      X      |        X         |      X       |     X    |    X     |        |
+| QUIC      |                  |      X      |        X         |      X       |     X    |    X     |   X    |
+
 
 # The Transport Adaptation Layer {#transport-adaptation}
 
 In order to compensate for the services not provided by a given
 underlying transport, each mapping of HTTP onto a new transport
-must define an intermediate layer, implementing the missing
+must define an intermediate layer implementing the missing
 services in order to enable the mapping.
 
 Some of these have been wholesale imports of other protocols
@@ -167,7 +178,7 @@ designed as a transport adaptation layer for HTTP over UDP,
 but is now being refactored into a general-purpose transport
 layer for multiple protocols.  Such a refactoring will require
 separating the services QUIC provides that are general to all
-applications and the services which exist purely to enable a
+applications from the services which exist purely to enable a
 mapping of HTTP to QUIC.
 
 ## Security
@@ -183,7 +194,7 @@ environment.
 
 For situations where the network does not provide integrity
 and confidentiality guarantees sufficient to the content,
-RFC ###FINDME### defines the use of TLS as an additional
+RFC2818 defines the use of TLS as an additional
 component of the adaptation layer in HTTP/1.1.  HTTP/2
 directly defines how TLS may be used to provide these
 services as part of its adaptation layer.
@@ -286,7 +297,7 @@ could consider all SCTP flows together.
 
 ### HTTP/2 Framing Layer
 
-HTTP/2 introduced a framing layer than incorporated the concept
+HTTP/2 introduced a framing layer that incorporated the concept
 of streams.  Because a very large number of idle streams
 automatically exist at the beginning of each connection,
 each stream can be used for a single request and response.
@@ -301,7 +312,8 @@ The transport is aware of each concurrent request in HTTP/1.1's
 mappings to TCP and SCTP.  In TCP, because there is only one
 request at a time, and in SCTP because each request occurs on a
 separate flow.  This means that the transport's own congestion
-control services are sufficient.
+control services are sufficient, even if sub-optimal in TCP's case
+due to multiple independent connections.
 
 Because HTTP/2's adaptation layer introduces a concurrency construct
 above the transport, the adaptation layer must also introduce
@@ -357,9 +369,7 @@ level.  (TODO:  CHECK THIS)
 
 # Moving Forward
 
-The definition of layers within HTTP may initially seem like
-an exercise in abstract software architecture.  However, the
-networks over which we run TCP/IP today look nothing like the
+The networks over which we run TCP/IP today look nothing like the
 networks for which TCP/IP was originally designed.  It is the
 clean separation between TCP, IP, and the lower-layer protocols
 which has enabled the continued usefulness of the higher-layer
