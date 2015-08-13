@@ -566,7 +566,7 @@ ul.toc a:first-child {
 </ul>
 <p id="rfc.section.1.p.4">HTTP/1.1 <a href="#RFC7230">[RFC7230]</a> expands on the TCP binding, introducing connection management concepts into the HTTP layer.</p>
 <p id="rfc.section.1.p.5">HTTP/2 <a href="#RFC7540">[RFC7540]</a> replaced the simple text-based protocol with a binary framing.  Conceptually, much of what was introduced in HTTP/2 represents implementation of new transport services on top of TCP due to the difficulty in deploying modifications to TCP on the Internet.  The working group&#8217;s charter to maintain HTTP&#8217;s broad applicability meant that there were few or no changes in how HTTP surfaces to applications.</p>
-<p id="rfc.section.1.p.6">Other efforts have mapped HTTP or a subset of it to various transport protocols besides TCP &#8211; HTTP can be implemented over SCTP <a href="#RFC4960">[RFC4960]</a> as in <a href="#I-D.natarajan-http-over-sctp">[I-D.natarajan-http-over-sctp]</a>, and useful profiles of HTTP have been mapped to UDP in various ways (HTTPU and HTTPUM <a href="#Goland-http-udp">[Goland-http-udp]</a> and <a href="#UPnP">[UPnP]</a>, CoAP <a href="#RFC7252">[RFC7252]</a>, QUIC <a href="#I-D.tsvwg-quic-protocol">[I-D.tsvwg-quic-protocol]</a>).  With the publication of HTTP/2 over TCP, the working group is beginning to consider how a mapping to a non-TCP transport would function.  In order to frame this conversation, common terms must be defined.</p>
+<p id="rfc.section.1.p.6">Other efforts have mapped HTTP or a subset of it to various transport protocols besides TCP &#8211; HTTP can be implemented over SCTP <a href="#RFC4960">[RFC4960]</a> as in <a href="#I-D.natarajan-http-over-sctp">[I-D.natarajan-http-over-sctp]</a>, and useful profiles of HTTP have been mapped to UDP in various ways (HTTPU and HTTPUM <a href="#goland-http-udp">[goland-http-udp]</a> and <a href="#UPnP">[UPnP]</a>, CoAP <a href="#RFC7252">[RFC7252]</a>, QUIC <a href="#I-D.tsvwg-quic-protocol">[I-D.tsvwg-quic-protocol]</a>).  With the publication of HTTP/2 over TCP, the working group is beginning to consider how a mapping to a non-TCP transport would function.  In order to frame this conversation, common terms must be defined.</p>
 <h1 id="rfc.section.2"><a href="#rfc.section.2">2.</a> <a href="#the-semantic-layer" id="the-semantic-layer">The Semantic Layer</a></h1>
 <p id="rfc.section.2.p.1">At the most fundamental level, the semantic layer of HTTP consists of a client&#8217;s ability to request some action of a server and be informed of the outcome of that action.  HTTP defines a number of possible actions (methods) the client might request of the server, but permits the list of actions to be extended.</p>
 <p id="rfc.section.2.p.2">A client&#8217;s request consists of a desired action (HTTP method) and a resource on which that action is to be taken (path).  The server responds which a status code which informs the client of the result of the request &#8211; the outcome of the action or the reason the action was not performed.  Actions may or may not be idempotent or safe, and the results may or may not be cached by intermediaries; this is defined as part of the HTTP method.</p>
@@ -645,7 +645,7 @@ ul.toc a:first-child {
 </table>
 <h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#transport-adaptation" id="transport-adaptation">The Transport Adaptation Layer</a></h1>
 <p id="rfc.section.4.p.1">In order to compensate for the services not provided by a given underlying transport, each mapping of HTTP onto a new transport must define an intermediate layer implementing the missing services in order to enable the mapping.</p>
-<p id="rfc.section.4.p.2">Some of these have been wholesale imports of other protocols which exist to provide such an adaptation layer (TLS <a href="#RFC2818">[RFC2818]</a>) while others have been entirely new protocol machinery constructed specifically to serve as an adaptation layer (HTTP/2 framing).  Others take the form of implementation-level meta-protocol behavior (simultaneous connections handled in parallel).  Because the existence of this adaptation layer has not been explicitly defined in the past, a clean separation has not always been maintained between the adaptation layer and either the transport or the semantic layer.</p>
+<p id="rfc.section.4.p.2">Some of these have been wholesale imports of other protocols which exist to provide such an adaptation layer (TLS <a href="#RFC5246">[RFC5246]</a>) while others have been entirely new protocol machinery constructed specifically to serve as an adaptation layer (HTTP/2 framing).  Others take the form of implementation-level meta-protocol behavior (simultaneous connections handled in parallel).  Because the existence of this adaptation layer has not been explicitly defined in the past, a clean separation has not always been maintained between the adaptation layer and either the transport or the semantic layer.</p>
 <p id="rfc.section.4.p.3">Some adaptation layers are so complex and fully-featured that the transport layer plus the adaptation layer can be conceptually treated as a new transport.  For example, QUIC was originally designed as a transport adaptation layer for HTTP over UDP, but is now being refactored into a general-purpose transport layer for multiple protocols.  Such a refactoring will require separating the services QUIC provides that are general to all applications from the services which exist purely to enable a mapping of HTTP to QUIC.</p>
 <h1 id="rfc.section.4.1"><a href="#rfc.section.4.1">4.1.</a> <a href="#security" id="security">Security</a></h1>
 <p id="rfc.section.4.1.p.1">Integrity and confidentiality are valuable services for communication over the Internet, and HTTP is no exception.  HTTP originally defined no additional integrity or confidentiality mechanisms for the TCP mapping, leaving the integrity and confidentiality levels to those provided by the network transport.  These may be minimal (TCP checksums) or rich (IPsec) depending on the network environment.</p>
@@ -698,7 +698,7 @@ ul.toc a:first-child {
   <tbody>
     <tr>
       <td class="reference">
-        <b id="Goland-http-udp">[Goland-http-udp]</b>
+        <b id="goland-http-udp">[goland-http-udp]</b>
       </td>
       <td class="top"><a>Microsoft Corporation</a>, <a href="http://tools.ietf.org/html/draft-goland-http-udp-01">Multicast and Unicast UDP HTTP Messages</a>", November 1999.</td>
     </tr>
@@ -737,6 +737,12 @@ ul.toc a:first-child {
         <b id="RFC4960">[RFC4960]</b>
       </td>
       <td class="top"><a>Stewart, R.</a>, "<a href="http://tools.ietf.org/html/rfc4960">Stream Control Transmission Protocol</a>", RFC 4960, DOI 10.17487/RFC4960, September 2007.</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="RFC5246">[RFC5246]</b>
+      </td>
+      <td class="top"><a>Dierks, T.</a> and <a>E. Rescorla</a>, "<a href="http://tools.ietf.org/html/rfc5246">The Transport Layer Security (TLS) Protocol Version 1.2</a>", RFC 5246, DOI 10.17487/RFC5246, August 2008.</td>
     </tr>
     <tr>
       <td class="reference">
