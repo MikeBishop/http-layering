@@ -1,4 +1,4 @@
-﻿---
+---
 title: Decomposing the Hypertext Transfer Protocol
 abbrev: Decomposing HTTP
 docname: draft-bishop-decomposing-http-latest
@@ -23,16 +23,27 @@ author:
 informative:
   RFC1945:
   RFC2818:
-  STUNT:
-    target: http://deusty.blogspot.com/2007/09/stunt-out-of-band-channels.html
-    title: STUNT & out-of-band channels
+  RFC7230:
+  RFC7252:
+  RFC7540:
+  RFC7541:
+  Goland-http-udp:
+    target: http://tools.ietf.org/html/draft-goland-http-udp-01
+    title: Multicast and Unicast UDP HTTP Messages
+    date: 1999-11-09
     author:
-      name: Robbie Hanson
-      ins: R. Hanson
-    date: 2007-09-17
-
-
-
+      name: Yaron Y. Goland
+      organization: Microsoft Corporation
+  UPnP:
+    target: http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v2.0.pdf
+    title: UPnP Device Architecture 2.0
+    date: 2015
+  I-D.tsvwg-quic-protocol:
+  RFC6347:
+  I-D.natarajan-http-over-sctp:
+  RFC4960:
+  I-D.ietf-core-block:
+    
 --- abstract
 
 The Hypertext Transfer Protocol in its various versions
@@ -57,11 +68,11 @@ used to render the HTML, but has since been used as a
 general-purpose application transport. Server APIs are
 commonly exposed as REST APIs, accessed over HTTP.
 
-HTTP/1.0 was a text-based protocol which did not specify
+HTTP/1.0 {{RFC1945}} was a text-based protocol which did not specify
 its underlying transport, but describes the mapping this way:
 
 > On the Internet, HTTP communication generally takes place over TCP/IP
-> connections. The default port is TCP 80 [15], but other ports can be
+> connections. The default port is TCP 80, but other ports can be
 > used. This does not preclude HTTP from being implemented on top of
 > any other protocol on the Internet, or on other networks. HTTP only
 > presumes a reliable transport; any protocol that provides such
@@ -69,23 +80,25 @@ its underlying transport, but describes the mapping this way:
 > response structures onto the transport data units of the protocol in
 > question is outside the scope of this specification.
 
-HTTP/1.1 expands on the TCP binding, introducing connection
+HTTP/1.1 {{RFC7230}} expands on the TCP binding, introducing connection
 management concepts into the HTTP layer.
 
-HTTP/2 replaced the simple text-based protocol with a binary
+HTTP/2 {{RFC7540}} replaced the simple text-based protocol with a binary
 framing.  Conceptually, much of what was introduced in
 HTTP/2 represents implementation of new transport services
 on top of TCP due to the difficulty in deploying modifications
 to TCP on the Internet.  The working group's charter to
 maintain HTTP's broad applicability meant that there were few
-or nochanges in how HTTP surfaces to applications.
+or no changes in how HTTP surfaces to applications.
 
 Other efforts have mapped HTTP or a subset of it to various
 transport protocols besides TCP -- HTTP can be implemented
-over SCTP, and useful profiles of HTTP have been mapped to
-UDP in various ways (HTTP-M, CoAP, QUIC).  With the publication
-of HTTP/2 over TCP, the working group is beginning to consider
-how a mapping to a non-TCP transport would
+over SCTP {{RFC4960}} as in {{I-D.natarajan-http-over-sctp}},
+and useful profiles of HTTP have been mapped to
+UDP in various ways (HTTPU and HTTPUM {{Goland-http-udp}}
+and {{UPnP}}, CoAP {{RFC7252}}, QUIC {{I-D.tsvwg-quic-protocol}}).
+With the publication of HTTP/2 over TCP, the working group 
+is beginning to consider how a mapping to a non-TCP transport would
 function.  In order to frame this conversation, common terms
 must be defined.
 
@@ -162,7 +175,7 @@ must define an intermediate layer implementing the missing
 services in order to enable the mapping.
 
 Some of these have been wholesale imports of other protocols
-which exist to provide such an adaptation layer (TLS) while
+which exist to provide such an adaptation layer (TLS {{RFC2818}}) while
 others have been entirely new protocol machinery constructed
 specifically to serve as an adaptation layer (HTTP/2 framing).
 Others take the form of implementation-level meta-protocol behavior
@@ -195,7 +208,7 @@ environment.
 
 For situations where the network does not provide integrity
 and confidentiality guarantees sufficient to the content,
-RFC2818 defines the use of TLS as an additional
+{{RFC2818}} defines the use of TLS as an additional
 component of the adaptation layer in HTTP/1.1.  HTTP/2
 directly defines how TLS may be used to provide these
 services as part of its adaptation layer.
@@ -205,7 +218,8 @@ those services are provided by the adaptation layer itself
 rather than the underlying transport, the adaptation layer
 must either provide those services to TLS as well as HTTP
 (as in QUIC) or a variant of TLS which does not require
-those services must be substituted (DTLS, as used in CoAP).
+those services must be substituted (DTLS {{RFC6347}},
+as used in CoAP).
 
 ## Message Framing and Request Metadata
 
@@ -236,10 +250,11 @@ then uses separate HEADERS and DATA frames to delimit the boundary
 between metadata and message body.
 
 Because the text-based transfer of repetitive headers represented
-a major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK, a
-custom compression scheme which operates on key-value pairs rather
-than text blocks.  HTTP/2 frame types which transport headers
-always carry compressed blocks rather than a key-value dictionary.
+a major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK
+{{RFC7541}}, a custom compression scheme which operates on key-value
+pairs rather than text blocks.  HTTP/2 frame types which transport
+headers always carry compressed blocks rather than a key-value
+dictionary.
 
 ## Parallelism and Throttling
 
@@ -374,9 +389,10 @@ guarantees.  HTTP/2 has two ordering requirements:
     delivered to HPACK in order
 
 UDP mappings of HTTP must define mechanisms to restore the
-original order of message fragments.  HTTPM and CoAP both do
-this by assigning sequence numbers at the adaptation layer
-level.  (TODO:  CHECK THIS)
+original order of message fragments.  HTTPU(M) and the base form
+of CoAP both do this by restricting messages to the size of
+a single datagram, while {{I-D.ietf-core-block}} extends CoAP
+to define an in-order delivery mechanism in the adaptation layer.
 
 # Moving Forward
 

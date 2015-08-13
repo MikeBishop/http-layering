@@ -31,7 +31,7 @@ enscript ?= enscript
 ps2pdf ?= ps2pdf
 
 # Where to get references
-XML_RESOURCE_ORG_PREFIX ?= http://unicorn-wg.github.io/idrefs
+XML_RESOURCE_ORG_PREFIX ?= http://xml2rfc.ietf.org/public/rfc
 
 
 ## Work out what to build
