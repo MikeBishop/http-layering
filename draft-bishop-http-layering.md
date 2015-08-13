@@ -106,8 +106,8 @@ the results may or may not be cached by intermediaries; this is
 defined as part of the HTTP method.
 
 Each message (request or response) has associated metadata, called
-"headers" which provide additional information about the operation.
-In a request this might inclued client identification, credentials
+"headers," which provide additional information about the operation.
+In a request this might include client identification, credentials
 authorizing the client to request the action, or preferences about
 how the client would prefer the server handle the action.  In a
 response, this might include information about the resulting data,
@@ -120,8 +120,9 @@ keys which occur multiple times should be handled.  Due to artifacts
 of existing usage, these rules vary from key to key.  For similar
 legacy reasons, there is no uniform structure of the values across
 all keys.  Keys are case-insensitive ASCII strings, while values
-are sequences of octets.  Many headers are defined by the HTTP
-RFCs, but the space is not constrained.
+are sequences of octets typically interpreted as ASCII.  Many headers
+are defined by the HTTP RFCs, but the space is not constrained and
+is frequently extended with little or no notice.
 
 Each message, whether request or response, also has an optional body.  The
 presence and content of the body will vary based on the action requested.
@@ -131,7 +132,7 @@ presence and content of the body will vary based on the action requested.
 The HTTP Semantic Layer depends on the availability
 of the following services:
 
-  - Request metadata
+  - Separate metadata and payload
   - Parallelism
   - Partial delivery
   - Flow control and throttling
@@ -145,12 +146,12 @@ In the following table, we can see multiple transports
 over which HTTP has been deployed and the services they do
 or do not offer.
 
-| Transport | Request metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
-|-----------|------------------|-------------|------------------|--------------|----------|----------|--------|
-| TCP       |                  |             |        X         |      X       |     X    |    X     |        |
-| UDP       |                  |             |        X         |              |          |          |        |
-| SCTP      |                  |      X      |        X         |      X       |     X    |    X     |        |
-| QUIC      |                  |      X      |        X         |      X       |     X    |    X     |   X    |
+| Transport | Metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
+|-----------|----------|-------------|------------------|--------------|----------|----------|--------|
+| TCP       |          |             |        X         |      X       |     X    |    X     |        |
+| UDP       |          |             |        X         |              |          |          |        |
+| SCTP      |          |      X      |        X         |      X       |     X    |    X     |        |
+| QUIC      |          |      X      |        X         |      X       |     X    |    X     |   X    |
 
 
 # The Transport Adaptation Layer {#transport-adaptation}
@@ -216,13 +217,17 @@ a message and package the metadata into this projection.
 
 ### HTTP/1.x and Text-Based Headers
 
-HTTP/1.x projects a message as an ASCII block, with specific octets
-used to delimit the boundaries between message components.  Within
+HTTP/1.x projects a message as an octet sequence which typically
+resembles a block of ASCII text.  Specific octets are used to
+delimit the boundaries between message components.  Within
 the portion of the message dedicated to headers, the key-value pairs
 are expressed as text, with the ':' character and whitespace separating
 the key from the value.
 
-TODO:  Mention line folding?
+Because this region appears to be text, many text conventions have
+accidentally crept into HTTP/1.x message parsers and even protocol
+conventions (line-folding, CRLF differences between operating systems,
+etc.).
 
 ### HTTP/2 and HPACK
 
@@ -269,6 +274,12 @@ independent flows, TCP was unable to consider them as a group for
 purposes of congestion control, leading to suboptimal behavior
 on the network.
 
+Servers which desired additional parallelism could game such
+implementations by exposing resources under multiple hostnames,
+causing the client implementations to open six connections
+*to each hostname* and gain an arbitrary amount of parallelism,
+to the detriment of functional congestion control.
+
 There were further attempts to improve the use of TCP in HTTP/1.1.
 HTTP Pipelining allowed the client to eliminate the round-trip that
 was incurred between the end of the server's response to one request
@@ -289,11 +300,9 @@ over a single connection, HTTP/1.1 could be mapped with relative
 ease.  Instead of using separate TCP connections, SCTP flows
 could be used to provide a multiplexing layer.  Each flow
 was reused for new requests after the completion of a 
-response, just as HTTP/1.1 used TCP connections.  
-###TODO: CHECK THIS###
-This allowed
+response, just as HTTP/1.1 used TCP connections.  This allowed
 for better flow control performance, since the transport
-could consider all SCTP flows together.
+could consider all flows together.
 
 ### HTTP/2 Framing Layer
 
@@ -339,7 +348,9 @@ CoAP dedicates a portion of its message framing to indicating
 whether a given message requires reliability or not.  If
 reliable delivery is required, the recipient acknowledges
 receipt and the sender continues to repeat the message
-until the acknowledgement is received.
+until the acknowledgement is received.  For non-idempotent
+requests, this means keeping additional state about which
+requests have already been processed.
 
 Some applications above HTTP are able to provide their own
 loss-recovery messages, and therefore do not actually require
