@@ -27,7 +27,7 @@ informative:
   RFC7252:
   RFC7540:
   RFC7541:
-  Goland-http-udp:
+  I-D.goland-http-udp:
     target: http://tools.ietf.org/html/draft-goland-http-udp-01
     title: Multicast and Unicast UDP HTTP Messages
     date: 1999-11-09
@@ -43,6 +43,7 @@ informative:
   I-D.natarajan-http-over-sctp:
   RFC4960:
   I-D.ietf-core-block:
+  RFC5246:
     
 --- abstract
 
@@ -95,7 +96,7 @@ Other efforts have mapped HTTP or a subset of it to various
 transport protocols besides TCP -- HTTP can be implemented
 over SCTP {{RFC4960}} as in {{I-D.natarajan-http-over-sctp}},
 and useful profiles of HTTP have been mapped to
-UDP in various ways (HTTPU and HTTPUM {{Goland-http-udp}}
+UDP in various ways (HTTPU and HTTPUM {{I-D.goland-http-udp}}
 and {{UPnP}}, CoAP {{RFC7252}}, QUIC {{I-D.tsvwg-quic-protocol}}).
 With the publication of HTTP/2 over TCP, the working group 
 is beginning to consider how a mapping to a non-TCP transport would
@@ -175,7 +176,7 @@ must define an intermediate layer implementing the missing
 services in order to enable the mapping.
 
 Some of these have been wholesale imports of other protocols
-which exist to provide such an adaptation layer (TLS {{RFC2818}}) while
+which exist to provide such an adaptation layer (TLS {{RFC5246}}) while
 others have been entirely new protocol machinery constructed
 specifically to serve as an adaptation layer (HTTP/2 framing).
 Others take the form of implementation-level meta-protocol behavior
