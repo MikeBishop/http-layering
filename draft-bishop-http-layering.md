@@ -53,6 +53,7 @@ informative:
     author:
       name: Henrik Frystyk Nielsen
       organization: W3C
+  RFC6951:
 
     
 --- abstract
@@ -194,7 +195,7 @@ over which HTTP has been deployed and the services they do
 or do not offer.
 
 |      | Metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
-|------|----------|-------------|------------------|--------------|----------|----------|--------|
+|------|:--------:|:-----------:|:----------------:|:------------:|:--------:|:--------:|:------:|
 | TCP  |          |             |        X         |      X       |     X    |    X     |        |
 | UDP  |          |             |        X         |              |          |          |        |
 | SCTP |          |      X      |        X         |      X       |     X    |    X     |        |
@@ -257,11 +258,12 @@ as used in CoAP).
 
 ## Message Framing and Request Metadata
 
-Each request and response contains metadata about the message
-(headers) and an optional body.  Since underlying transports
-provide only a bytestream or message abstraction for each request,
-each HTTP mapping must define a way to separate the components of
-a message and package the metadata into this projection.
+Any protocol defines how the semantics of the protocol are
+mapped onto the wire in a transport.  Most transports are
+either bytestreams or message-based, meaning that higher-layer
+concepts must be laid out in a reasonable structure within the
+stream or message.  Each HTTP request and response contains
+metadata about the message (headers) and an optional body.
 
 ### HTTP/1.x and Text-Based Headers
 
@@ -269,26 +271,29 @@ HTTP/1.x projects a message as an octet sequence which typically
 resembles a block of ASCII text.  Specific octets are used to
 delimit the boundaries between message components.  Within
 the portion of the message dedicated to headers, the key-value pairs
-are expressed as text, with the ':' character and whitespace separating
-the key from the value.
+are expressed as text, with the ':' character and whitespace
+separating the key from the value.
 
 Because this region appears to be text, many text conventions have
 accidentally crept into HTTP/1.x message parsers and even protocol
 conventions (line-folding, CRLF differences between operating systems,
-etc.).
+etc.).  This is a source of bugs, such as line-folding characters which
+appear in an HTTP/2 message despite HTTP/2 not using a text-based
+header framing.
 
 ### HTTP/2 and HPACK
 
 HTTP/2 projects the requested action into the set of headers,
 then uses separate HEADERS and DATA frames to delimit the boundary
-between metadata and message body.
+between metadata and message body.  These frames are used to provide
+message-like behaviors and parallelism over a single TCP bytestream.
 
 Because the text-based transfer of repetitive headers represented
 a major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK
 {{RFC7541}}, a custom compression scheme which operates on key-value
 pairs rather than text blocks.  HTTP/2 frame types which transport
-headers always carry compressed blocks rather than a key-value
-dictionary.
+headers always carry HPACK header block fragments rather than an
+uncompressed key-value dictionary.
 
 ## Parallelism and Throttling
 
@@ -308,11 +313,12 @@ handled independently.  This had the drawback that TCP connection
 setup was required with each request and flow control almost
 never exited the slow-start phase, limiting performance.
 
-In HTTP/1.1, connections are reused -- when the end of a response
-has been received, a new request can be sent.  Management of
-the connection was performed by the addition of new HTTP headers
-which did not actually refer to the message but the underlying
-transport (e.g. "Connection: keep-alive").
+To improve this, new headers were introduced to manage connection
+lifetime (e.g. "Connection: keep-alive"), blurring the distinction
+between message metadata and connection metadata.  These headers
+were formalized in HTTP/1.1.  This improvement means that connections
+are reused -- when the end of a response
+has been received, a new request can be sent.
 
 Throttling of simultaneous requests was fully in the realm of
 implementations, which constrained themselves to opening only
@@ -329,14 +335,14 @@ causing the client implementations to open six connections
 *to each hostname* and gain an arbitrary amount of parallelism,
 to the detriment of functional congestion control.
 
-There were further attempts to improve the use of TCP in HTTP/1.1.
-HTTP Pipelining allowed the client to eliminate the round-trip that
-was incurred between the end of the server's response to one request
-and the server's receipt of the client's next request.  However,
-pipelining suffers from head-of-line blocking since a request on a
-different connection might complete sooner.  The client's inability
-to predict the length of requested actions limited the usefulness
-of pipelining.
+There were further attempts to improve the use of TCP.  Pipelining,
+also introduced in HTTP/1.1, allowed the client to eliminate the
+round-trip that was incurred between the end of the server's response
+to one request and the server's receipt of the client's next request.
+However, pipelining increases the problem of head-of-line blocking
+since a request on a different connection might complete sooner.  The
+client's inability to predict the length of requested actions
+limited the usefulness of pipelining.
 
 SMUX {{w3c-smux}} allowed the use of a single TCP connection to
 carry multiple channels over which HTTP could be carried.
@@ -354,6 +360,10 @@ response, just as HTTP/1.1 used TCP connections.  This allowed
 for better flow control performance, since the transport
 could consider all flows together.
 
+SCTP has seen limited deployment on the Internet, though recent
+experience has shown SCTP over UDP {{RFC6951}} to be a more viable
+combination.
+
 ### HTTP/2 Framing Layer
 
 HTTP/2 introduced a framing layer that incorporated the concept
@@ -365,7 +375,7 @@ enabling a cleaner separation between metadata about the
 connection from metadata about the separate messages within
 the connection.
 
-## Congestion Control
+## Congestion control
 
 The transport is aware of each concurrent request in HTTP/1.1's
 mappings to TCP and SCTP.  In TCP, because there is only one
@@ -379,7 +389,7 @@ above the transport, the adaptation layer must also introduce
 a means of flow control to keep the concurrent transactions
 from introducing head-of-line blocking above TCP.
 
-## Reliabile delivery
+## Reliable delivery
 
 There are many ways for a transport to provide reliable
 delivery of messages. This may take the form of loss recovery,
@@ -398,7 +408,7 @@ CoAP dedicates a portion of its message framing to indicating
 whether a given message requires reliability or not.  If
 reliable delivery is required, the recipient acknowledges
 receipt and the sender continues to repeat the message
-until the acknowledgement is received.  For non-idempotent
+until the acknowledgment is received.  For non-idempotent
 requests, this means keeping additional state about which
 requests have already been processed.
 
@@ -441,7 +451,7 @@ The goal is not merely architectural purity, but modularity.
 HTTP has enjoyed a long life as a higher-layer protocol and is
 useful to many varied applications.  As transports continue to
 evolve, we will almost certainly find ourselves in the position
-of defining a mapping of HTTP onto a new transpont once again.
+of defining a mapping of HTTP onto a new transport once again.
 With a clear understanding of the HTTP semantic layer and the
 services it requires, we can better scope the requirements
 of a new adaptation layer while reusing the components of
