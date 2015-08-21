@@ -3,7 +3,7 @@
 This is the working area for the [HTTPBis](https://trac.tools.ietf.org/wg/httpbis/trac/wiki) draft of Decomposing HTTP
 
 * [Editor's copy](https://mikebishop.github.io/http-layering/)
-* Working Group Draft not yet submitted
+* [Working Group Draft](https://tools.ietf.org/html/draft-bishop-decomposing-http-00)
 
 
 ## Contributing
