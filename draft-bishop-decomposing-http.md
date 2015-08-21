@@ -1,8 +1,8 @@
 ---
 title: Decomposing the Hypertext Transfer Protocol
 abbrev: Decomposing HTTP
-docname: draft-bishop-decomposing-http-latest
-date: 2015-07-31
+docname: draft-bishop-decomposing-http-00
+date: 2015-08-21
 category: info
 
 ipr: trust200902
@@ -113,10 +113,10 @@ framing.  The changes are described in the following way:
 >   Finally, HTTP/2 also enables more efficient processing of messages
 >   through use of binary message framing.
 
-Conceptually, HTTP/1.1 achieved the same properties on a TCP mapping
-using wildly different strategies.  HTTP/1.1 achieves properties such
-as parallelism and out-of-order delivery by the use of multiple TCP
-connections.  HTTP/2 implements additional transport services
+Conceptually, HTTP/2 achieved the same properties required of a TCP
+mapping using wildly different strategies from HTTP/1.1.  HTTP/1.1
+achieves properties such as parallelism and out-of-order delivery by
+the use of multiple TCP connections.  HTTP/2 implements these services
 on top of TCP to enable the use of a single TCP connection.
 The working group's charter to maintain HTTP's broad applicability
 meant that there were few or no changes in how HTTP surfaces to
@@ -194,13 +194,20 @@ In the following table, we can see multiple transports
 over which HTTP has been deployed and the services they do
 or do not offer.
 
-|      | Metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
-|------|:--------:|:-----------:|:----------------:|:------------:|:--------:|:--------:|:------:|
-| TCP  |          |             |        X         |      X       |     X    |    X     |        |
-| UDP  |          |             |        X         |              |          |          |        |
-| SCTP |          |      X      |        X         |      X       |     X    |    X     |        |
-| QUIC |          |      X      |        X         |      X       |     X    |    X     |   X    |
+|                  | TCP | UDP | SCTP | QUIC |
+|------------------|:---:|:---:|:----:|:----:|
+| Metadata         |     |     |      |      |
+| Parallelism      |     |     |  X   |  X   |
+| Partial delivery |  X  |  X  |  X   |  X   |
+| Flow Control     |  X  |  X  |  X   |  X   |
+| Reliable         |  X  |     |  X   |  X   |
+| In-order         |  X  |     |  X   |  X   |
+| Secure           |     |     |      |  X   |
 
+Based on an initial review of this table, it would seem that
+UDP is the least-appropriate substrate for an HTTP mapping.
+However, what ultimately matters is the combined capability
+of the transport and the application-defined adaptation layer.
 
 # The Transport Adaptation Layer {#transport-adaptation}
 
