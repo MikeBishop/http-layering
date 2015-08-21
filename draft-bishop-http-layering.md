@@ -14,7 +14,6 @@ stand_alone: yes
 pi: [toc, sortrefs, symrefs]
 
 author:
- -
     ins: M. Bishop
     name: Mike Bishop
     organization: Microsoft
@@ -44,6 +43,17 @@ informative:
   RFC4960:
   I-D.ietf-core-block:
   RFC5246:
+  w3c-smux:
+    target: http://www.w3.org/TR/WD-mux
+    title: SMUX Protocol Specification
+    date: 1998-07-10
+    author:
+      name: Jim Gettys
+      organization: W3C
+    author:
+      name: Henrik Frystyk Nielsen
+      organization: W3C
+
     
 --- abstract
 
@@ -85,23 +95,46 @@ HTTP/1.1 {{RFC7230}} expands on the TCP binding, introducing connection
 management concepts into the HTTP layer.
 
 HTTP/2 {{RFC7540}} replaced the simple text-based protocol with a binary
-framing.  Conceptually, much of what was introduced in
-HTTP/2 represents implementation of new transport services
-on top of TCP due to the difficulty in deploying modifications
-to TCP on the Internet.  The working group's charter to
-maintain HTTP's broad applicability meant that there were few
-or no changes in how HTTP surfaces to applications.
+framing.  The changes are described in the following way:
+
+>   HTTP/2 addresses these issues by defining an optimized mapping of
+>   HTTP's semantics to an underlying connection.  Specifically, it
+>   allows interleaving of request and response messages on the same
+>   connection and uses an efficient coding for HTTP header fields.  It
+>   also allows prioritization of requests, letting more important
+>   requests complete more quickly, further improving performance.
+>
+>   The resulting protocol is more friendly to the network because fewer
+>   TCP connections can be used in comparison to HTTP/1.x.  This means
+>   less competition with other flows and longer-lived connections, which
+>   in turn lead to better utilization of available network capacity.
+>
+>   Finally, HTTP/2 also enables more efficient processing of messages
+>   through use of binary message framing.
+
+Conceptually, HTTP/1.1 achieved the same properties on a TCP mapping
+using wildly different strategies.  HTTP/1.1 achieves properties such
+as parallelism and out-of-order delivery by the use of multiple TCP
+connections.  HTTP/2 implements additional transport services
+on top of TCP to enable the use of a single TCP connection.
+The working group's charter to maintain HTTP's broad applicability
+meant that there were few or no changes in how HTTP surfaces to
+applications.
 
 Other efforts have mapped HTTP or a subset of it to various
 transport protocols besides TCP -- HTTP can be implemented
 over SCTP {{RFC4960}} as in {{I-D.natarajan-http-over-sctp}},
 and useful profiles of HTTP have been mapped to
-UDP in various ways (HTTPU and HTTPUM {{goland-http-udp}}
+UDP in various ways (HTTPU and HTTPUM in {{goland-http-udp}}
 and {{UPnP}}, CoAP {{RFC7252}}, QUIC {{I-D.tsvwg-quic-protocol}}).
+
 With the publication of HTTP/2 over TCP, the working group 
 is beginning to consider how a mapping to a non-TCP transport would
-function.  In order to frame this conversation, common terms
-must be defined.
+function.  This document aims to enable this conversation by describing
+the services required by the HTTP semantic layer.  A mapping of HTTP
+to a transport other than TCP must define how these services are
+obtained, either from the new transport or by implementing them at
+the application layer.
 
 # The Semantic Layer
 
@@ -160,12 +193,12 @@ In the following table, we can see multiple transports
 over which HTTP has been deployed and the services they do
 or do not offer.
 
-| Transport | Metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
-|-----------|----------|-------------|------------------|--------------|----------|----------|--------|
-| TCP       |          |             |        X         |      X       |     X    |    X     |        |
-| UDP       |          |             |        X         |              |          |          |        |
-| SCTP      |          |      X      |        X         |      X       |     X    |    X     |        |
-| QUIC      |          |      X      |        X         |      X       |     X    |    X     |   X    |
+|      | Metadata | Parallelism | Partial delivery | Flow control | Reliable | In-order | Secure |
+|------|----------|-------------|------------------|--------------|----------|----------|--------|
+| TCP  |          |             |        X         |      X       |     X    |    X     |        |
+| UDP  |          |             |        X         |              |          |          |        |
+| SCTP |          |      X      |        X         |      X       |     X    |    X     |        |
+| QUIC |          |      X      |        X         |      X       |     X    |    X     |   X    |
 
 
 # The Transport Adaptation Layer {#transport-adaptation}
@@ -179,8 +212,8 @@ Some of these have been wholesale imports of other protocols
 which exist to provide such an adaptation layer (TLS {{RFC5246}}) while
 others have been entirely new protocol machinery constructed
 specifically to serve as an adaptation layer (HTTP/2 framing).
-Others take the form of implementation-level meta-protocol behavior
-(simultaneous connections handled in parallel).
+Still others take the form of implementation-level meta-protocol
+behavior (simultaneous connections handled in parallel).
 Because the existence of this adaptation layer has not been
 explicitly defined in the past, a clean separation
 has not always been maintained between the adaptation layer
@@ -279,7 +312,7 @@ In HTTP/1.1, connections are reused -- when the end of a response
 has been received, a new request can be sent.  Management of
 the connection was performed by the addition of new HTTP headers
 which did not actually refer to the message but the underlying
-transport (e.g. "Connection: close").
+transport (e.g. "Connection: keep-alive").
 
 Throttling of simultaneous requests was fully in the realm of
 implementations, which constrained themselves to opening only
@@ -305,9 +338,10 @@ different connection might complete sooner.  The client's inability
 to predict the length of requested actions limited the usefulness
 of pipelining.
 
-HTTP Multiplexing allowed the use of a single TCP connection to
-emit multiple requests, which the server could answer in any
-order.  However, this was never broadly deployed because ###WHY NOT?###.
+SMUX {{w3c-smux}} allowed the use of a single TCP connection to
+carry multiple channels over which HTTP could be carried.
+This would permit the server to answer requests in any
+order.  However, this was never broadly deployed.
 
 ### HTTP/1.1 over SCTP
 
