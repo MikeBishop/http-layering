@@ -1,7 +1,7 @@
 ---
 title: Decomposing the Hypertext Transfer Protocol
 abbrev: Decomposing HTTP
-docname: draft-bishop-decomposing-http-00
+docname: draft-bishop-decomposing-http-latest
 date: 2015-08-21
 category: info
 
@@ -54,6 +54,7 @@ informative:
       name: Henrik Frystyk Nielsen
       organization: W3C
   RFC6951:
+  RFC1149:
 
     
 --- abstract
@@ -96,31 +97,14 @@ HTTP/1.1 {{RFC7230}} expands on the TCP binding, introducing connection
 management concepts into the HTTP layer.
 
 HTTP/2 {{RFC7540}} replaced the simple text-based protocol with a binary
-framing.  The changes are described in the following way:
-
->   HTTP/2 addresses these issues by defining an optimized mapping of
->   HTTP's semantics to an underlying connection.  Specifically, it
->   allows interleaving of request and response messages on the same
->   connection and uses an efficient coding for HTTP header fields.  It
->   also allows prioritization of requests, letting more important
->   requests complete more quickly, further improving performance.
->
->   The resulting protocol is more friendly to the network because fewer
->   TCP connections can be used in comparison to HTTP/1.x.  This means
->   less competition with other flows and longer-lived connections, which
->   in turn lead to better utilization of available network capacity.
->
->   Finally, HTTP/2 also enables more efficient processing of messages
->   through use of binary message framing.
-
-Conceptually, HTTP/2 achieved the same properties required of a TCP
-mapping using wildly different strategies from HTTP/1.1.  HTTP/1.1
-achieves properties such as parallelism and out-of-order delivery by
-the use of multiple TCP connections.  HTTP/2 implements these services
-on top of TCP to enable the use of a single TCP connection.
-The working group's charter to maintain HTTP's broad applicability
-meant that there were few or no changes in how HTTP surfaces to
-applications.
+framing.  Conceptually, HTTP/2 achieved the same properties required
+of a TCP mapping using wildly different strategies from HTTP/1.1.
+HTTP/1.1 achieves properties such as parallelism and out-of-order
+delivery by the use of multiple TCP connections.  HTTP/2 implements
+these services on top of TCP to enable the use of a single TCP
+connection. The working group's charter to maintain HTTP's broad
+applicability meant that there were few or no changes in how HTTP
+surfaces to applications.
 
 Other efforts have mapped HTTP or a subset of it to various
 transport protocols besides TCP -- HTTP can be implemented
@@ -178,54 +162,188 @@ presence and content of the body will vary based on the action requested.
 # Transport Services Required {#transport}
 
 The HTTP Semantic Layer depends on the availability
-of the following services:
+of several services from its lower layer:
 
-  - Separate metadata and payload
-  - Parallelism
-  - Partial delivery
-  - Flow control and throttling
   - Reliable delivery
   - In-order delivery
-  - Security
+  - Partial delivery
+  - Parallelism
+  - Separate metadata and payload
+  - Flow control and throttling
+
+In this section, each of these properties will be discussed at a high
+level with a focus on why HTTP requires these properties to be
+present.  The [next section](#transport-adaptation) will discuss
+how various HTTP mappings have handled the absence of these
+required services in different transports.
+
+## Reliable delivery
+
+HTTP does not provide the concept to higher layers that some data
+was received while some was not.  If a request is sent, it is assumed
+that either a response will arrive or the transport will report an
+error.  HTTP itself is not concerned with any intermediate states.
+
+There are many ways for a transport to provide reliable
+delivery of messages. This may take the form of loss recovery,
+where the loss of packets is detected and the corresponding
+information retransmitted.  Alternately, a transport may
+proactively send extra information so that the data stream
+is tolerant to some loss -- the full message can be reconstructed
+after receipt of a sufficient fraction of the transmission.
+
+It is worth noting that some consumers of HTTP have relaxed
+requirements in this space -- while HTTP itself has no notion of
+lossy delivery, some mappings do have weakened guarantees and are
+only appropriate for scenarios where those weakened guarantees are
+acceptable.
+
+## In-order delivery
+
+The headers of each message must arrive before any body, since they
+dictate how the body will be processed.  The body is typically
+exposed as a bytestream which can be read from sequentially,
+though there are some consumers who are able to use incomplete
+fragments of certain resource types.
+
+Regardless of the ability to surface and use fragmentary pieces of
+an HTTP message, the HTTP layer requires the transport be able to
+ultimately provide a correct ordering and full reconstruction of
+each message.
+
+## Partial delivery
+
+While only some users of HTTP (client or server) are able to deal
+with unordered fragments of an HTTP message, it is almost universally
+necessary to deal with HTTP messages in pieces.  There are multiple
+reasons why that may be necessary:
+
+ - The message may be too large to maintain in memory at once
+(the download of a large file)
+ - The beginning of a request may be sufficient to generate a
+response (error due to lack of authorization)
+ - The message may be constructed incrementally, sending each segment
+as it becomes available
+
+Regardless, HTTP needs the transport to begin sending the message
+before the end of the message is available.
+
+## Parallelism
+
+Because a client will often need each server to perform multiple
+actions at once, HTTP requires the ability to deliver requests
+in parallel and allow the server to respond to each request
+as the actions complete.  Head-of-line blocking is a particular
+problem here that transports must attempt to avoid -- client requests
+should ideally reach the server as quickly as possible, allowing the
+server to choose the correct order in which to handle the requests
+(with input from the client).  Any situation in which a request
+remains unknown to the server until another request completes is
+suboptimal.
+
+## Separate metadata and payload
+
+Any protocol defines how the semantics of the protocol are
+mapped onto the wire in a transport.  Most transports are
+either bytestreams or message-based, meaning that higher-layer
+concepts must be laid out in a reasonable structure within the
+stream or message.  Each HTTP request and response contains
+metadata about the message (headers) and an optional body.
+
+These are separate constructs in HTTP, and mechanisms to carry them
+and keep them appropriately associated must be provided. Note that
+it's not actually expected that any *generic* transport layer would
+or should have this property, but is nonetheless involved in
+transporting HTTP messages.
+
+## Flow control and throttling
+
+Flow control is a necessary property of any transport.  Because no
+network can handle an uncontrolled burst of data at infinite speeds,
+the transport must determine an appropriate sustained data rate for
+the intervening network.  Even in the presence of a nearly-infinite
+network capacity, the remote server will also have limits on its
+ability to consume data.
+
+In order to avoid overwhelming either the network or the server, HTTP
+requires a mechanism to limit sending data rates as well as to limit
+the rate of new requests going to a server.  Although it is optimal
+for a server to know about all outstanding client requests (even if
+it chooses not to work on them immediately), the server may wish to
+protect itself by limiting the memory commitment to outstanding data
+or requests.  The transport should facilitate such protection on the
+part of a server (or client, in certain scenarios).
+
+## Other desirable properties
+
+There are several properties not properly required for the
+implementation of HTTP, but which users of HTTP have come to assume
+are present.
+
+### Security
+
+Integrity and confidentiality are valuable services for
+communication over the Internet, and HTTP is no exception.
+While authentication, message integrity, and privacy are not
+inherently *required* for the implementation of HTTP, they are
+advantageous properties for any mapping to have, so that each party
+can be sure that what they received is what the other party sent.
+
+TLS {{RFC5246}} is commonly used in mappings to provide this service,
+and itself requires reliable, in-order delivery.  When
+those services are not provided by the underlying transport,
+the mapping must either provide those services to TLS as well as
+HTTP (as in QUIC) or a variant of TLS which provides those services
+for itself must be substituted (DTLS {{RFC6347}}, as used in CoAP).
+
+### Efficiency
+
+While it would be technically possible to define HTTP over a highly
+inefficient transport or mapping (e.g. format messages in Baudot code,
+transporting them to the server using avian carriers as in
+{{RFC1149}}), there is little reason for applications to use such
+inefficient mappings when efficient transport mappings exist.
+
+Efficiency can be characterized on many levels:
+
+  - Reducing the number of bytes required to transport a message,
+either through lower overhead or better compression
+  - Reducing the time from request generation to response receipt
+  - Reducing the amount of computation or memory required to process
+or route a request 
+
+# The Transport Adaptation Layer {#transport-adaptation}
 
 No transport over which HTTP can be mapped actually provides
 all of the services on which the HTTP Semantic Layer depends.
 In the following table, we can see multiple transports
-over which HTTP has been deployed and the services they do
-or do not offer.
+over which HTTP has been deployed and the services which the
+underlying transports do or do not offer.
 
-|                  | TCP | UDP | SCTP | QUIC |
-|------------------|:---:|:---:|:----:|:----:|
-| Metadata         |     |     |      |      |
-| Parallelism      |     |     |  X   |  X   |
-| Partial delivery |  X  |  X  |  X   |  X   |
-| Flow Control     |  X  |  X  |  X   |  X   |
-| Reliable         |  X  |     |  X   |  X   |
-| In-order         |  X  |     |  X   |  X   |
-| Secure           |     |     |      |  X   |
-
-Based on an initial review of this table, it would seem that
-UDP is the least-appropriate substrate for an HTTP mapping.
-However, what ultimately matters is the combined capability
-of the transport and the application-defined adaptation layer.
-
-# The Transport Adaptation Layer {#transport-adaptation}
+|                               | TCP | UDP | SCTP | QUIC |
+|-------------------------------|:---:|:---:|:----:|:----:|
+| Reliable delivery             |  X  |     |  X   |  X   |
+| In-order delivery             |  X  |     |  X   |  X   |
+| Partial delivery              |  X  |  X  |  X   |  X   |
+| Parallelism                   |     |     |  X   |  X   |
+| Separate metadata and payload |     |     |      |  *   |
+| Flow control & throttling     |  X  |  X  |  X   |  X   |
 
 In order to compensate for the services not provided by a given
 underlying transport, each mapping of HTTP onto a new transport
 must define an intermediate layer implementing the missing
-services in order to enable the mapping.
+services in order to enable the mapping, as well as any additional
+features the mapping finds to be desirable.
 
-Some of these have been wholesale imports of other protocols
-which exist to provide such an adaptation layer (TLS {{RFC5246}}) while
-others have been entirely new protocol machinery constructed
-specifically to serve as an adaptation layer (HTTP/2 framing).
-Still others take the form of implementation-level meta-protocol
-behavior (simultaneous connections handled in parallel).
+Some of these are entirely new protocol machinery constructed
+specifically to serve as an adaptation layer and carried within the
+transport (HTTP/2 framing over TCP). Others take the form of
+implementation-level meta-protocol behavior (simultaneous TCP
+connections handled in parallel) not visible to the transport.
 Because the existence of this adaptation layer has not been
-explicitly defined in the past, a clean separation
-has not always been maintained between the adaptation layer
-and either the transport or the semantic layer.
+explicitly defined in the past, a clean separation has not always
+been maintained between the adaptation layer and either the transport
+or the semantic layer.
 
 Some adaptation layers are so complex and fully-featured that
 the transport layer plus the adaptation layer can be conceptually
@@ -235,44 +353,17 @@ but is now being refactored into a general-purpose transport
 layer for multiple protocols.  Such a refactoring will require
 separating the services QUIC provides that are general to all
 applications from the services which exist purely to enable a
-mapping of HTTP to QUIC.
+mapping of HTTP to QUIC.  (In the table above, QUIC is referenced as
+a generic transport; the HTTP-over-QUIC mapping is discussed below.)
 
-## Security
+## HTTP/1.x over TCP
 
-Integrity and confidentiality are valuable services for
-communication over the Internet, and HTTP is no exception.
-HTTP originally defined no additional integrity or
-confidentiality mechanisms for the TCP mapping, leaving
-the integrity and confidentiality levels to those provided
-by the network transport.  These may be minimal (TCP
-checksums) or rich (IPsec) depending on the network
-environment.
+Since HTTP/1.x is defined over TCP, many of the necessary services
+are provided by the transport, enabling a relatively simple mapping.
+However, there were a number of conventions introduced to fill lacks
+in the underlying transport.
 
-For situations where the network does not provide integrity
-and confidentiality guarantees sufficient to the content,
-{{RFC2818}} defines the use of TLS as an additional
-component of the adaptation layer in HTTP/1.1.  HTTP/2
-directly defines how TLS may be used to provide these
-services as part of its adaptation layer.
-
-TLS itself requires reliable, in-order delivery.  When
-those services are provided by the adaptation layer itself
-rather than the underlying transport, the adaptation layer
-must either provide those services to TLS as well as HTTP
-(as in QUIC) or a variant of TLS which does not require
-those services must be substituted (DTLS {{RFC6347}},
-as used in CoAP).
-
-## Message Framing and Request Metadata
-
-Any protocol defines how the semantics of the protocol are
-mapped onto the wire in a transport.  Most transports are
-either bytestreams or message-based, meaning that higher-layer
-concepts must be laid out in a reasonable structure within the
-stream or message.  Each HTTP request and response contains
-metadata about the message (headers) and an optional body.
-
-### HTTP/1.x and Text-Based Headers
+### Metadata and framing
 
 HTTP/1.x projects a message as an octet sequence which typically
 resembles a block of ASCII text.  Specific octets are used to
@@ -285,34 +376,9 @@ Because this region appears to be text, many text conventions have
 accidentally crept into HTTP/1.x message parsers and even protocol
 conventions (line-folding, CRLF differences between operating systems,
 etc.).  This is a source of bugs, such as line-folding characters which
-appear in an HTTP/2 message despite HTTP/2 not using a text-based
-header framing.
+appear in header values even after being unframed.
 
-### HTTP/2 and HPACK
-
-HTTP/2 projects the requested action into the set of headers,
-then uses separate HEADERS and DATA frames to delimit the boundary
-between metadata and message body.  These frames are used to provide
-message-like behaviors and parallelism over a single TCP bytestream.
-
-Because the text-based transfer of repetitive headers represented
-a major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK
-{{RFC7541}}, a custom compression scheme which operates on key-value
-pairs rather than text blocks.  HTTP/2 frame types which transport
-headers always carry HPACK header block fragments rather than an
-uncompressed key-value dictionary.
-
-## Parallelism and Throttling
-
-Because a client will often need each server to perform multiple
-actions at once, HTTP requires the ability to deliver requests
-in parallel and allow the server to respond to each request
-as the actions complete.  In order to avoid overwhelming
-either the transport or the server, HTTP also requires a
-mechanism to limit the number of simultaneous requests
-a client may have outstanding.
-
-### HTTP/1.x and Multiple Connections
+### Parallelism and request limiting
 
 HTTP/1.0 used a very simple multi-request model -- each request
 was made on a separate TCP connection, and all requests were
@@ -342,21 +408,36 @@ causing the client implementations to open six connections
 *to each hostname* and gain an arbitrary amount of parallelism,
 to the detriment of functional congestion control.
 
-There were further attempts to improve the use of TCP.  Pipelining,
-also introduced in HTTP/1.1, allowed the client to eliminate the
-round-trip that was incurred between the end of the server's response
-to one request and the server's receipt of the client's next request.
-However, pipelining increases the problem of head-of-line blocking
-since a request on a different connection might complete sooner.  The
-client's inability to predict the length of requested actions
-limited the usefulness of pipelining.
+### Security
+
+HTTP originally defined no additional integrity or
+confidentiality mechanisms for the TCP mapping, leaving
+the integrity and confidentiality levels to those provided
+by the network transport.  These may be minimal (TCP
+checksums) or rich (IPsec) depending on the network
+environment.
+
+For situations where the network does not provide integrity
+and confidentiality guarantees sufficient to the content,
+{{RFC2818}} defines the use of TLS as an additional
+component of the adaptation layer in HTTP/1.1.
+
+### Attempts to improve the TCP mapping
+
+Pipelining, also introduced in HTTP/1.1, allowed the client to
+eliminate the round-trip that was incurred between the end of the
+server's response to one request and the server's receipt of the
+client's next request. However, pipelining increases the problem of
+head-of-line blocking since a request on a different connection might
+complete sooner.  The client's inability to predict the length of
+requested actions limited the usefulness of pipelining.
 
 SMUX {{w3c-smux}} allowed the use of a single TCP connection to
 carry multiple channels over which HTTP could be carried.
 This would permit the server to answer requests in any
 order.  However, this was never broadly deployed.
 
-### HTTP/1.1 over SCTP
+## HTTP/1.x over SCTP
 
 Because SCTP permits the use of multiple simultaneous streams
 over a single connection, HTTP/1.1 could be mapped with relative
@@ -371,7 +452,27 @@ SCTP has seen limited deployment on the Internet, though recent
 experience has shown SCTP over UDP {{RFC6951}} to be a more viable
 combination.
 
-### HTTP/2 Framing Layer
+## HTTP/2 over TCP
+
+HTTP/2, also a TCP mapping, attempted to improve the mapping of HTTP
+to TCP without introducing changes at the semantic level.
+
+>   HTTP/2 addresses these issues by defining an optimized mapping of
+>   HTTP's semantics to an underlying connection.  Specifically, it
+>   allows interleaving of request and response messages on the same
+>   connection and uses an efficient coding for HTTP header fields.  It
+>   also allows prioritization of requests, letting more important
+>   requests complete more quickly, further improving performance.
+>
+>   The resulting protocol is more friendly to the network because fewer
+>   TCP connections can be used in comparison to HTTP/1.x.  This means
+>   less competition with other flows and longer-lived connections, which
+>   in turn lead to better utilization of available network capacity.
+>
+>   Finally, HTTP/2 also enables more efficient processing of messages
+>   through use of binary message framing.
+
+### Framing and Parallelism
 
 HTTP/2 introduced a framing layer that incorporated the concept
 of streams.  Because a very large number of idle streams
@@ -382,42 +483,55 @@ enabling a cleaner separation between metadata about the
 connection from metadata about the separate messages within
 the connection.
 
-## Congestion control
+HTTP/2 projects the requested action into the set of headers,
+then uses separate HEADERS and DATA frames to delimit the boundary
+between metadata and message body on each stream. These frames are
+used to provide message-like behaviors and parallelism over a single
+TCP bytestream.
 
-The transport is aware of each concurrent request in HTTP/1.1's
-mappings to TCP and SCTP.  In TCP, because there is only one
-request at a time, and in SCTP because each request occurs on a
-separate flow.  This means that the transport's own congestion
-control services are sufficient, even if sub-optimal in TCP's case
-due to multiple independent connections.
+Because the text-based transfer of repetitive headers represented
+a major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK
+{{RFC7541}}, a custom compression scheme which operates on key-value
+pairs rather than text blocks.  HTTP/2 frame types which transport
+headers always carry HPACK header block fragments rather than an
+uncompressed key-value dictionary.
+
+### Congestion and flow control
 
 Because HTTP/2's adaptation layer introduces a concurrency construct
 above the transport, the adaptation layer must also introduce
 a means of flow control to keep the concurrent transactions
-from introducing head-of-line blocking above TCP.
+from introducing head-of-line blocking above TCP.  This led HTTP/2 to
+create a flow-control scheme within the adaptation layer in addition
+to TCP's flow control algorithms.
 
-## Reliable delivery
+In HTTP/1.1, this was not needed -- the application simply reads from
+TCP as space is available, and allow's TCP's own flow control to
+govern.  In HTTP/2, this would cause severe head-of-line blocking due
+to the increased parallelism, and so the control must be exerted at a
+higher level.
 
-There are many ways for a transport to provide reliable
-delivery of messages. This may take the form of loss recovery,
-where the loss of packets is detected and the corresponding
-information retransmitted.  Alternately, a transport may
-proactively send extra information so that the data stream
-is tolerant to some loss -- the full message can be reconstructed
-after receipt of a sufficient fraction of the transmission.
+### Security
 
-Because TCP and SCTP both provide reliable delivery mechanisms,
-there was no need to introduce new service in this area for HTTP
-mappings.  However, the adaptation layers of HTTP mappings
-over UDP have needed to introduce this concept.
+HTTP/2 directly defines how TLS may be used to provide security
+services as part of its adaptation layer.
 
-CoAP dedicates a portion of its message framing to indicating
-whether a given message requires reliability or not.  If
-reliable delivery is required, the recipient acknowledges
-receipt and the sender continues to repeat the message
-until the acknowledgment is received.  For non-idempotent
-requests, this means keeping additional state about which
-requests have already been processed.
+## HTTPU(M) and CoAP
+
+UDP mappings of HTTP must define mechanisms to restore the
+original order of message fragments.  HTTPU(M) and the base form
+of CoAP both do this by restricting messages to the size of
+a single datagram, while {{I-D.ietf-core-block}} extends CoAP
+to define an in-order delivery mechanism in the adaptation layer.
+
+Adaptation layers of HTTP mappings over UDP have also needed to
+introduce mechanisms for reliable delivery.  CoAP dedicates a portion
+of its message framing to indicating whether a given message requires
+reliability or not.  If reliable delivery is required, the recipient
+acknowledges receipt and the sender continues to repeat the message
+until the acknowledgment is received.  For non-idempotent requests,
+this means keeping additional state about which requests have already
+been processed.
 
 Some applications above HTTP are able to provide their own
 loss-recovery messages, and therefore do not actually require
@@ -425,26 +539,31 @@ the guarantees that HTTP provides.  HTTP over UDP Multicast
 is targeted at such applications, and therefore does not
 provide reliable delivery to applications above it.
 
-## In-order delivery
+## QUIC over UDP, or HTTP/2 over QUIC, or...?
 
-The sequence numbers used to detect the partial loss of data
-also permit TCP and SCTP to reassemble data in the order it
-was originally sent.
+QUIC is an overloaded term.  QUIC is a rich HTTP mapping to UDP 
+{{I-D.tsvwg-quic-protocol}} which implements many TCP- and SCTP-like
+behaviors in its adaptation layer.  It describes itself this way:
 
-HTTP/2 does not actually require a full
-ordering, but TCP does not offer a way to relax its ordering
-guarantees.  HTTP/2 has two ordering requirements:
+>   QUIC (Quick UDP Internet Connection) is a new multiplexed and secure
+>   transport atop UDP, designed from the ground up and optimized for
+>   HTTP/2 semantics.  While built with HTTP/2 as the primary application
+>   protocol, QUIC builds on decades of transport and security
+>   experience, and implements mechanisms that make it attractive as a
+>   modern general-purpose transport.  QUIC provides multiplexing and
+>   flow control equivalent to HTTP/2, security equivalent to TLS, and
+>   connection semantics, reliability, and congestion control equivalent
+>   to TCP. 
 
-  - All frames on a stream must be delivered to the
-    application in order
-  - All frames bearing header fragments must be
-    delivered to HPACK in order
+Consequently, QUIC is *also* a "general-purpose transport" over which
+an HTTP mapping can be defined and implemented.
 
-UDP mappings of HTTP must define mechanisms to restore the
-original order of message fragments.  HTTPU(M) and the base form
-of CoAP both do this by restricting messages to the size of
-a single datagram, while {{I-D.ietf-core-block}} extends CoAP
-to define an in-order delivery mechanism in the adaptation layer.
+This division makes it unclear which parts belong to the transport
+versus an HTTP mapping on top of this new transport.  For example,
+QUIC does define how to separately transport the headers and body of
+an HTTP message.  However, this capability is likely not relevant in
+a general-purpose transport and might better be removed from
+QUIC-the-transport and incorporated into HTTP-over-QUIC.
 
 # Moving Forward
 
