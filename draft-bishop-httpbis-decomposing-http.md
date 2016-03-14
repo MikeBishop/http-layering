@@ -1,8 +1,8 @@
 ---
 title: Decomposing the Hypertext Transfer Protocol
 abbrev: Decomposing HTTP
-docname: draft-bishop-decomposing-http-latest
-date: 2015-09-01
+docname: draft-bishop-httpbis-decomposing-http-latest
+date: 2016-03
 category: info
 
 ipr: trust200902
