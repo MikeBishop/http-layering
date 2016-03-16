@@ -1,6 +1,6 @@
 ---
-title: Decomposing the Hypertext Transfer Protocol
-abbrev: Decomposing HTTP
+title: Disentangling the Hypertext Transfer Protocol
+abbrev: Disentangling HTTP
 docname: draft-bishop-httpbis-decomposing-http-latest
 date: 2016-03
 category: info
