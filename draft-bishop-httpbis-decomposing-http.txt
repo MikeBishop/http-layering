@@ -4,11 +4,11 @@
 
 HTTPBis Working Group                                          M. Bishop
 Internet-Draft                                                 Microsoft
-Intended status: Informational                            March 14, 2016
-Expires: September 15, 2016
+Intended status: Informational                            March 16, 2016
+Expires: September 17, 2016
 
 
-              Decomposing the Hypertext Transfer Protocol
+             Disentangling the Hypertext Transfer Protocol
               draft-bishop-httpbis-decomposing-http-latest
 
 Abstract
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on September 15, 2016.
+   This Internet-Draft will expire on September 17, 2016.
 
 Copyright Notice
 
@@ -53,9 +53,9 @@ Copyright Notice
 
 
 
-Bishop                 Expires September 15, 2016               [Page 1]
+Bishop                 Expires September 17, 2016               [Page 1]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    the Trust Legal Provisions and are provided without warranty as
@@ -109,9 +109,9 @@ Table of Contents
 
 
 
-Bishop                 Expires September 15, 2016               [Page 2]
+Bishop                 Expires September 17, 2016               [Page 2]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
       On the Internet, HTTP communication generally takes place over
@@ -165,9 +165,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 3]
+Bishop                 Expires September 17, 2016               [Page 3]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    responds which a status code which informs the client of the result
@@ -221,9 +221,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 4]
+Bishop                 Expires September 17, 2016               [Page 4]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    present.  The next section (Section 4) will discuss how various HTTP
@@ -277,9 +277,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 5]
+Bishop                 Expires September 17, 2016               [Page 5]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    o  The beginning of a request may be sufficient to generate a
@@ -333,9 +333,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 6]
+Bishop                 Expires September 17, 2016               [Page 6]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
 3.6.1.  Parallelism
@@ -389,9 +389,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 7]
+Bishop                 Expires September 17, 2016               [Page 7]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    o  Reducing the amount of computation or memory required to process
@@ -445,9 +445,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 8]
+Bishop                 Expires September 17, 2016               [Page 8]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    protocols.  Such a refactoring will require separating the services
@@ -501,9 +501,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016               [Page 9]
+Bishop                 Expires September 17, 2016               [Page 9]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    limited number of connections.  HTTP/1.1 originally recommended two,
@@ -557,9 +557,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016              [Page 10]
+Bishop                 Expires September 17, 2016              [Page 10]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    TCP connections.  This allowed for better flow control performance,
@@ -613,9 +613,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016              [Page 11]
+Bishop                 Expires September 17, 2016              [Page 11]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    headers always carry HPACK header block fragments rather than an
@@ -669,9 +669,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016              [Page 12]
+Bishop                 Expires September 17, 2016              [Page 12]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    Some applications above HTTP are able to provide their own loss-
@@ -725,9 +725,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016              [Page 13]
+Bishop                 Expires September 17, 2016              [Page 13]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    the underlying transport without clearly separating them from the
@@ -781,9 +781,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016              [Page 14]
+Bishop                 Expires September 17, 2016              [Page 14]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    [RFC2818]  Rescorla, E., "HTTP Over TLS", RFC 2818,
@@ -837,9 +837,9 @@ Internet-Draft              Decomposing HTTP                  March 2016
 
 
 
-Bishop                 Expires September 15, 2016              [Page 15]
+Bishop                 Expires September 17, 2016              [Page 15]
 
-Internet-Draft              Decomposing HTTP                  March 2016
+Internet-Draft             Disentangling HTTP                 March 2016
 
 
    [w3c-smux]
@@ -893,4 +893,4 @@ Author's Address
 
 
 
-Bishop                 Expires September 15, 2016              [Page 16]
+Bishop                 Expires September 17, 2016              [Page 16]
