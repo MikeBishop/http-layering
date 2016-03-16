@@ -1,4 +1,4 @@
-# Decomposing HTTP
+# Disentangling HTTP
 
 This is the working area for the [HTTPBis](https://trac.tools.ietf.org/wg/httpbis/trac/wiki) draft of Disentangling HTTP
 
