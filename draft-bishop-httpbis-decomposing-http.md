@@ -22,6 +22,7 @@ author:
 informative:
   RFC1945:
   RFC2818:
+  RFC3986:
   RFC7230:
   RFC7252:
   RFC7540:
@@ -40,6 +41,7 @@ informative:
   I-D.tsvwg-quic-protocol:
   RFC6347:
   I-D.natarajan-http-over-sctp:
+  I-D.ietf-httpbis-alt-svc:
   RFC4960:
   I-D.ietf-core-block:
   RFC5246:
@@ -174,11 +176,27 @@ Each message, whether request or response, also has an optional body.
 The presence and content of the body will vary based on the action
 requested and the headers provided.
 
+## Causality and Ordering at the Semantic Layer
+
+Because HTTP is fundamentally a request-response protocol, the request 
+is assumed always to have preceded and triggered the response. While
+it is legal for a server to issue a response while the request is
+still in progress, this is conceptually equal to issuing the response
+after the request is complete.  Servers may be able to identify error
+conditions and send early responses with errors; early successes are
+unlikely.
+
+There is no such thing as a response without a request, though HTTP/2 
+push stretches this concept by allowing the server to specify both the 
+request and the response. This is an extension of classic HTTP semantics 
+as a performance optimization. 
+
 # Transport Services Required {#transport}
 
 The HTTP Semantic Layer depends on the availability
 of several services from its lower layer:
 
+  - Addressing
   - Reliable delivery
   - In-order delivery
   - Partial delivery
@@ -190,6 +208,20 @@ level with a focus on why HTTP requires these properties to be
 present.  The [next section](#transport-adaptation) will discuss
 how various HTTP mappings have handled the absence of these
 required services in different transports.
+
+## Addressing
+
+HTTP identifies resources by URI {{RFC3986}}.  While the path and query
+portions of a URI are handled entirely by HTTP, the authority portion
+needs to be resolvable by the transport.  This may include IP literals
+(both IPv4 and IPv6), DNS hostnames, or other identifiers outside the
+scope of DNS.  The authority portion also typically includes a port number,
+either express or implied.
+
+More recent proposals {{I-D.ietf-httpbis-alt-svc}} have enabled the HTTP
+origin to be separated from the network-resolved hostname and port, but
+HTTP still relies on the mapping having the ability to create a session
+with a representative of a particular origin.
 
 ## Reliable delivery
 
@@ -228,10 +260,14 @@ each message.
 
 ## Partial delivery
 
-While only some users of HTTP (client or server) are able to deal
-with unordered fragments of an HTTP message, it is almost universally
-necessary to deal with HTTP messages in pieces.  There are multiple
-reasons why that may be necessary:
+While only some users of HTTP (client or server) are able to deal with 
+unordered fragments of an HTTP message, it is almost universally 
+necessary to deal with HTTP messages in pieces. The headers must 
+typically be processed in order to have the context to interpret the 
+body, and various scenarios require processing the body in incremental 
+chunks. 
+
+There are multiple reasons why that may be necessary: 
 
  - The message may be too large to maintain in memory at once
 (the download of a large file)
@@ -243,7 +279,7 @@ as it becomes available
 Regardless, HTTP needs the transport to begin sending the message
 before the end of the message is available.
 
-## Separate request/response, metadata, and payload
+## Framing
 
 Any protocol defines how the semantics of the protocol are
 mapped onto the wire in a transport.  Most transports are
@@ -251,6 +287,7 @@ either bytestreams or message-based, meaning that higher-layer
 concepts must be laid out in a reasonable structure within the
 stream or message.  Each HTTP request or response contains
 metadata about the message (headers) and an optional body.
+There must also be a way to identify the end of the HTTP message.
 
 These are separate constructs in HTTP, and mechanisms to carry them
 and keep them appropriately associated must be provided. Note that
@@ -258,7 +295,12 @@ it's not actually expected that any *generic* transport layer would
 or should have this property, but is nonetheless involved in
 transporting HTTP messages.
 
-## Flow control and throttling
+## Connection management
+
+Because HTTP is request-response-based, there is a logical session
+between the client and the server, even if the underlying transport
+does not establish one.  There must be a way to open this logical
+session and moderate usage once opened.
 
 Flow control is a necessary property of any transport.  Because no
 network can handle an uncontrolled burst of data at infinite speeds,
@@ -275,6 +317,14 @@ it chooses not to work on them immediately), the server may wish to
 protect itself by limiting the memory commitment to outstanding data
 or requests.  The transport should facilitate such protection on the
 part of a server (or client, in certain scenarios).
+
+Notably, while there may be ways to distinguish graceful or abrupt 
+session termination depending on the mapping and scenario, these are not 
+HTTP semantic concepts. An HTTP "session" is complete when all 
+outstanding requests have received responses and no new requests are 
+issued. Much of the effort in mappings around session termination
+ultimately amounts to distinguishing between a request which failed
+and a request which was effectively never sent.
 
 ## Other desirable properties
 
@@ -294,6 +344,14 @@ server to choose the correct order in which to handle the requests
 (with input from the client).  Any situation in which a request
 remains unknown to the server until another request completes is
 suboptimal.
+
+The presence of parallelism necessarily implies some choice by the
+transport and the peers about the allocation of resources amongst the
+various simultaneous requests.  This is true both on the HTTP peers
+and intermediaries (allocation of CPU, memory resources) and on the
+network itself (allocation of bandwidth between flows).  It is beneficial,
+though not required, to support some relative priority between multiple
+ongoing activities.
 
 ### Security
 
@@ -332,6 +390,7 @@ either through lower overhead or better compression
 or route a request
   - Reducing the power consumption required to generate or process
 a request
+  - Reducing the time from error occurrence to error detection
 
 # The Transport Adaptation Layer {#transport-adaptation}
 
@@ -349,10 +408,11 @@ underlying transports do or do not offer.
 
 |                               | TCP | UDP | SCTP | QUIC |
 |-------------------------------|:---:|:---:|:----:|:----:|
+| Addressing                    |  X  |  X  |  X   |  *   |
 | Reliable delivery             |  X  |     |  X   |  X   |
 | In-order delivery             |  X  |     |  X   |  X   |
 | Partial delivery              |  X  |  X  |  X   |  X   |
-| Separate metadata and payload |     |     |      |  *   |
+| Framing                       |     |     |      |  *   |
 | Flow control & throttling     |  X  |  X  |  X   |  X   |
 
 Some mappings contain entirely new protocol machinery constructed
