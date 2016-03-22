@@ -4,8 +4,8 @@
 
 HTTPBis Working Group                                          M. Bishop
 Internet-Draft                                                 Microsoft
-Intended status: Informational                            March 16, 2016
-Expires: September 17, 2016
+Intended status: Informational                            March 22, 2016
+Expires: September 23, 2016
 
 
              Disentangling the Hypertext Transfer Protocol
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on September 17, 2016.
+   This Internet-Draft will expire on September 23, 2016.
 
 Copyright Notice
 
@@ -53,7 +53,7 @@ Copyright Notice
 
 
 
-Bishop                 Expires September 17, 2016               [Page 1]
+Bishop                 Expires September 23, 2016               [Page 1]
 
 Internet-Draft             Disentangling HTTP                 March 2016
 
@@ -65,32 +65,34 @@ Table of Contents
 
    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
    2.  The Semantic Layer  . . . . . . . . . . . . . . . . . . . . .   3
-   3.  Transport Services Required . . . . . . . . . . . . . . . . .   4
-     3.1.  Reliable delivery . . . . . . . . . . . . . . . . . . . .   5
-     3.2.  In-order delivery . . . . . . . . . . . . . . . . . . . .   5
-     3.3.  Partial delivery  . . . . . . . . . . . . . . . . . . . .   5
-     3.4.  Separate request/response, metadata, and payload  . . . .   6
-     3.5.  Flow control and throttling . . . . . . . . . . . . . . .   6
-     3.6.  Other desirable properties  . . . . . . . . . . . . . . .   6
-       3.6.1.  Parallelism . . . . . . . . . . . . . . . . . . . . .   7
-       3.6.2.  Security  . . . . . . . . . . . . . . . . . . . . . .   7
-       3.6.3.  Efficiency  . . . . . . . . . . . . . . . . . . . . .   7
-   4.  The Transport Adaptation Layer  . . . . . . . . . . . . . . .   8
-     4.1.  HTTP/1.x over TCP . . . . . . . . . . . . . . . . . . . .   9
-       4.1.1.  Metadata and framing  . . . . . . . . . . . . . . . .   9
-       4.1.2.  Parallelism and request limiting  . . . . . . . . . .   9
-       4.1.3.  Security  . . . . . . . . . . . . . . . . . . . . . .  10
-       4.1.4.  Attempts to improve the TCP mapping . . . . . . . . .  10
-     4.2.  HTTP/1.x over SCTP  . . . . . . . . . . . . . . . . . . .  10
-     4.3.  HTTP/2 over TCP . . . . . . . . . . . . . . . . . . . . .  11
-       4.3.1.  Framing and Parallelism . . . . . . . . . . . . . . .  11
-       4.3.2.  Congestion and flow control . . . . . . . . . . . . .  12
-       4.3.3.  Security  . . . . . . . . . . . . . . . . . . . . . .  12
-     4.4.  HTTPU(M) and CoAP . . . . . . . . . . . . . . . . . . . .  12
-     4.5.  QUIC over UDP, or HTTP/2 over QUIC, or...?  . . . . . . .  13
-   5.  Moving Forward  . . . . . . . . . . . . . . . . . . . . . . .  13
-   6.  Informative References  . . . . . . . . . . . . . . . . . . .  14
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  16
+     2.1.  Causality and Ordering at the Semantic Layer  . . . . . .   4
+   3.  Transport Services Required . . . . . . . . . . . . . . . . .   5
+     3.1.  Addressing  . . . . . . . . . . . . . . . . . . . . . . .   5
+     3.2.  Reliable delivery . . . . . . . . . . . . . . . . . . . .   5
+     3.3.  In-order delivery . . . . . . . . . . . . . . . . . . . .   6
+     3.4.  Partial delivery  . . . . . . . . . . . . . . . . . . . .   6
+     3.5.  Framing . . . . . . . . . . . . . . . . . . . . . . . . .   7
+     3.6.  Connection management . . . . . . . . . . . . . . . . . .   7
+     3.7.  Other desirable properties  . . . . . . . . . . . . . . .   8
+       3.7.1.  Parallelism . . . . . . . . . . . . . . . . . . . . .   8
+       3.7.2.  Security  . . . . . . . . . . . . . . . . . . . . . .   8
+       3.7.3.  Efficiency  . . . . . . . . . . . . . . . . . . . . .   9
+   4.  The Transport Adaptation Layer  . . . . . . . . . . . . . . .   9
+     4.1.  HTTP/1.x over TCP . . . . . . . . . . . . . . . . . . . .  10
+       4.1.1.  Metadata and framing  . . . . . . . . . . . . . . . .  10
+       4.1.2.  Parallelism and request limiting  . . . . . . . . . .  11
+       4.1.3.  Security  . . . . . . . . . . . . . . . . . . . . . .  11
+       4.1.4.  Attempts to improve the TCP mapping . . . . . . . . .  12
+     4.2.  HTTP/1.x over SCTP  . . . . . . . . . . . . . . . . . . .  12
+     4.3.  HTTP/2 over TCP . . . . . . . . . . . . . . . . . . . . .  12
+       4.3.1.  Framing and Parallelism . . . . . . . . . . . . . . .  13
+       4.3.2.  Congestion and flow control . . . . . . . . . . . . .  13
+       4.3.3.  Security  . . . . . . . . . . . . . . . . . . . . . .  14
+     4.4.  HTTPU(M) and CoAP . . . . . . . . . . . . . . . . . . . .  14
+     4.5.  QUIC over UDP, or HTTP/2 over QUIC, or...?  . . . . . . .  14
+   5.  Moving Forward  . . . . . . . . . . . . . . . . . . . . . . .  15
+   6.  Informative References  . . . . . . . . . . . . . . . . . . .  15
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  17
 
 1.  Introduction
 
@@ -107,9 +109,7 @@ Table of Contents
 
 
 
-
-
-Bishop                 Expires September 17, 2016               [Page 2]
+Bishop                 Expires September 23, 2016               [Page 2]
 
 Internet-Draft             Disentangling HTTP                 March 2016
 
@@ -165,7 +165,7 @@ Internet-Draft             Disentangling HTTP                 March 2016
 
 
 
-Bishop                 Expires September 17, 2016               [Page 3]
+Bishop                 Expires September 23, 2016               [Page 3]
 
 Internet-Draft             Disentangling HTTP                 March 2016
 
@@ -201,10 +201,37 @@ Internet-Draft             Disentangling HTTP                 March 2016
    The presence and content of the body will vary based on the action
    requested and the headers provided.
 
+2.1.  Causality and Ordering at the Semantic Layer
+
+   Because HTTP is fundamentally a request-response protocol, the
+   request is assumed always to have preceded and triggered the
+   response.  While it is legal for a server to issue a response while
+   the request is still in progress, this is conceptually equal to
+   issuing the response after the request is complete.  Servers may be
+   able to identify error conditions and send early responses with
+   errors; early successes are unlikely.
+
+   There is no such thing as a response without a request, though HTTP/2
+   push stretches this concept by allowing the server to specify both
+   the request and the response.  This is an extension of classic HTTP
+   semantics as a performance optimization.
+
+
+
+
+
+
+Bishop                 Expires September 23, 2016               [Page 4]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
 3.  Transport Services Required
 
    The HTTP Semantic Layer depends on the availability of several
    services from its lower layer:
+
+   o  Addressing
 
    o  Reliable delivery
 
@@ -218,19 +245,25 @@ Internet-Draft             Disentangling HTTP                 March 2016
 
    In this section, each of these properties will be discussed at a high
    level with a focus on why HTTP requires these properties to be
-
-
-
-Bishop                 Expires September 17, 2016               [Page 4]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    present.  The next section (Section 4) will discuss how various HTTP
    mappings have handled the absence of these required services in
    different transports.
 
-3.1.  Reliable delivery
+3.1.  Addressing
+
+   HTTP identifies resources by URI [RFC3986].  While the path and query
+   portions of a URI are handled entirely by HTTP, the authority portion
+   needs to be resolvable by the transport.  This may include IP
+   literals (both IPv4 and IPv6), DNS hostnames, or other identifiers
+   outside the scope of DNS.  The authority portion also typically
+   includes a port number, either express or implied.
+
+   More recent proposals [I-D.ietf-httpbis-alt-svc] have enabled the
+   HTTP origin to be separated from the network-resolved hostname and
+   port, but HTTP still relies on the mapping having the ability to
+   create a session with a representative of a particular origin.
+
+3.2.  Reliable delivery
 
    HTTP does not provide the concept to higher layers that fragments of
    data were received while others were not.  If a request is sent, it
@@ -241,6 +274,14 @@ Internet-Draft             Disentangling HTTP                 March 2016
    There are many ways for a transport to provide reliable delivery of
    messages.  This may take the form of loss recovery, where the loss of
    packets is detected and the corresponding information retransmitted.
+
+
+
+Bishop                 Expires September 23, 2016               [Page 5]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
    Alternately, a transport may proactively send extra information so
    that the data stream is tolerant to some loss - the full message can
    be reconstructed after receipt of a sufficient fraction of the
@@ -252,7 +293,7 @@ Internet-Draft             Disentangling HTTP                 March 2016
    appropriate for scenarios where those weakened guarantees are
    acceptable.
 
-3.2.  In-order delivery
+3.3.  In-order delivery
 
    The headers of each message must arrive before any body, since they
    dictate how the body will be processed.  The body is typically
@@ -265,22 +306,19 @@ Internet-Draft             Disentangling HTTP                 March 2016
    ultimately provide a correct ordering and full reconstruction of each
    message.
 
-3.3.  Partial delivery
+3.4.  Partial delivery
 
    While only some users of HTTP (client or server) are able to deal
    with unordered fragments of an HTTP message, it is almost universally
-   necessary to deal with HTTP messages in pieces.  There are multiple
-   reasons why that may be necessary:
+   necessary to deal with HTTP messages in pieces.  The headers must
+   typically be processed in order to have the context to interpret the
+   body, and various scenarios require processing the body in
+   incremental chunks.
+
+   There are multiple reasons why that may be necessary:
 
    o  The message may be too large to maintain in memory at once (the
       download of a large file)
-
-
-
-Bishop                 Expires September 17, 2016               [Page 5]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
 
    o  The beginning of a request may be sufficient to generate a
       response (error due to lack of authorization)
@@ -291,14 +329,24 @@ Internet-Draft             Disentangling HTTP                 March 2016
    Regardless, HTTP needs the transport to begin sending the message
    before the end of the message is available.
 
-3.4.  Separate request/response, metadata, and payload
+
+
+
+
+Bishop                 Expires September 23, 2016               [Page 6]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
+3.5.  Framing
 
    Any protocol defines how the semantics of the protocol are mapped
    onto the wire in a transport.  Most transports are either bytestreams
    or message-based, meaning that higher-layer concepts must be laid out
    in a reasonable structure within the stream or message.  Each HTTP
    request or response contains metadata about the message (headers) and
-   an optional body.
+   an optional body.  There must also be a way to identify the end of
+   the HTTP message.
 
    These are separate constructs in HTTP, and mechanisms to carry them
    and keep them appropriately associated must be provided.  Note that
@@ -306,7 +354,12 @@ Internet-Draft             Disentangling HTTP                 March 2016
    or should have this property, but is nonetheless involved in
    transporting HTTP messages.
 
-3.5.  Flow control and throttling
+3.6.  Connection management
+
+   Because HTTP is request-response-based, there is a logical session
+   between the client and the server, even if the underlying transport
+   does not establish one.  There must be a way to open this logical
+   session and moderate usage once opened.
 
    Flow control is a necessary property of any transport.  Because no
    network can handle an uncontrolled burst of data at infinite speeds,
@@ -324,21 +377,30 @@ Internet-Draft             Disentangling HTTP                 March 2016
    or requests.  The transport should facilitate such protection on the
    part of a server (or client, in certain scenarios).
 
-3.6.  Other desirable properties
+   Notably, while there may be ways to distinguish graceful or abrupt
+   session termination depending on the mapping and scenario, these are
+   not HTTP semantic concepts.  An HTTP "session" is complete when all
+   outstanding requests have received responses and no new requests are
+   issued.  Much of the effort in mappings around session termination
+   ultimately amounts to distinguishing between a request which failed
+   and a request which was effectively never sent.
+
+
+
+
+
+Bishop                 Expires September 23, 2016               [Page 7]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
+3.7.  Other desirable properties
 
    There are several properties not properly required for the
    implementation of HTTP, but which users of HTTP have come to assume
    are present.
 
-
-
-
-Bishop                 Expires September 17, 2016               [Page 6]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
-3.6.1.  Parallelism
+3.7.1.  Parallelism
 
    Because a client will often desire a single server to perform
    multiple actions at once, all HTTP mappings provide the ability to
@@ -351,7 +413,15 @@ Internet-Draft             Disentangling HTTP                 March 2016
    which a request remains unknown to the server until another request
    completes is suboptimal.
 
-3.6.2.  Security
+   The presence of parallelism necessarily implies some choice by the
+   transport and the peers about the allocation of resources amongst the
+   various simultaneous requests.  This is true both on the HTTP peers
+   and intermediaries (allocation of CPU, memory resources) and on the
+   network itself (allocation of bandwidth between flows).  It is
+   beneficial, though not required, to support some relative priority
+   between multiple ongoing activities.
+
+3.7.2.  Security
 
    Integrity and confidentiality are valuable services for communication
    over the Internet, and HTTP is no exception.  While authentication,
@@ -371,7 +441,16 @@ Internet-Draft             Disentangling HTTP                 March 2016
    variant of TLS which provides those services for itself must be
    substituted (DTLS [RFC6347], as used in CoAP).
 
-3.6.3.  Efficiency
+
+
+
+
+Bishop                 Expires September 23, 2016               [Page 8]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
+3.7.3.  Efficiency
 
    While it would be technically possible to define HTTP over a highly
    inefficient transport or mapping (e.g. format messages in Baudot
@@ -386,19 +465,13 @@ Internet-Draft             Disentangling HTTP                 March 2016
 
    o  Reducing the time from request generation to response receipt
 
-
-
-
-Bishop                 Expires September 17, 2016               [Page 7]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    o  Reducing the amount of computation or memory required to process
       or route a request
 
    o  Reducing the power consumption required to generate or process a
       request
+
+   o  Reducing the time from error occurrence to error detection
 
 4.  The Transport Adaptation Layer
 
@@ -414,19 +487,40 @@ Internet-Draft             Disentangling HTTP                 March 2016
    HTTP has been deployed and the services which the underlying
    transports do or do not offer.
 
-        +-------------------------------+-----+-----+------+------+
-        |                               | TCP | UDP | SCTP | QUIC |
-        +-------------------------------+-----+-----+------+------+
-        | Reliable delivery             |  X  |     |  X   |  X   |
-        |                               |     |     |      |      |
-        | In-order delivery             |  X  |     |  X   |  X   |
-        |                               |     |     |      |      |
-        | Partial delivery              |  X  |  X  |  X   |  X   |
-        |                               |     |     |      |      |
-        | Separate metadata and payload |     |     |      |  *   |
-        |                               |     |     |      |      |
-        | Flow control & throttling     |  X  |  X  |  X   |  X   |
-        +-------------------------------+-----+-----+------+------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Bishop                 Expires September 23, 2016               [Page 9]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
+          +---------------------------+-----+-----+------+------+
+          |                           | TCP | UDP | SCTP | QUIC |
+          +---------------------------+-----+-----+------+------+
+          | Addressing                |  X  |  X  |  X   |  *   |
+          |                           |     |     |      |      |
+          | Reliable delivery         |  X  |     |  X   |  X   |
+          |                           |     |     |      |      |
+          | In-order delivery         |  X  |     |  X   |  X   |
+          |                           |     |     |      |      |
+          | Partial delivery          |  X  |  X  |  X   |  X   |
+          |                           |     |     |      |      |
+          | Framing                   |     |     |      |  *   |
+          |                           |     |     |      |      |
+          | Flow control & throttling |  X  |  X  |  X   |  X   |
+          +---------------------------+-----+-----+------+------+
 
    Some mappings contain entirely new protocol machinery constructed
    specifically to serve as an adaptation layer and carried within the
@@ -442,14 +536,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
    as a new transport.  For example, QUIC was originally designed as a
    transport adaptation layer for HTTP over UDP, but is now being
    refactored into a general-purpose transport layer for arbitrary
-
-
-
-Bishop                 Expires September 17, 2016               [Page 8]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    protocols.  Such a refactoring will require separating the services
    QUIC provides that are general to all applications from the services
    which exist purely to enable a mapping of HTTP to QUIC.  (In the
@@ -468,6 +554,14 @@ Internet-Draft             Disentangling HTTP                 March 2016
    HTTP/1.x projects a message as an octet sequence which typically
    resembles a block of ASCII text.  Specific octets are used to delimit
    the boundaries between message components.  Within the portion of the
+
+
+
+Bishop                 Expires September 23, 2016              [Page 10]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
    message dedicated to headers, the key-value pairs are expressed as
    text, with the ':' character and whitespace separating the key from
    the value.
@@ -498,14 +592,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
 
    Throttling of simultaneous requests was fully in the realm of
    implementations, which constrained themselves to opening only a
-
-
-
-Bishop                 Expires September 17, 2016               [Page 9]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    limited number of connections.  HTTP/1.1 originally recommended two,
    but later implementations increased this to six by default, and more
    under certain conditions.  Because these were fully independent
@@ -523,6 +609,15 @@ Internet-Draft             Disentangling HTTP                 March 2016
    HTTP originally defined no additional integrity or confidentiality
    mechanisms for the TCP mapping, leaving the integrity and
    confidentiality levels to those provided by the network transport.
+
+
+
+
+Bishop                 Expires September 23, 2016              [Page 11]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
    These may be minimal (TCP checksums) or rich (IPsec) depending on the
    network environment.
 
@@ -553,15 +648,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
    Instead of using separate TCP connections, SCTP flows could be used
    to provide a multiplexing layer.  Each flow was reused for new
    requests after the completion of a response, just as HTTP/1.1 used
-
-
-
-
-Bishop                 Expires September 17, 2016              [Page 10]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    TCP connections.  This allowed for better flow control performance,
    since the transport could consider all flows together.
 
@@ -580,6 +666,13 @@ Internet-Draft             Disentangling HTTP                 March 2016
       connection and uses an efficient coding for HTTP header fields.
       It also allows prioritization of requests, letting more important
       requests complete more quickly, further improving performance.
+
+
+
+Bishop                 Expires September 23, 2016              [Page 12]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
 
       The resulting protocol is more friendly to the network because
       fewer TCP connections can be used in comparison to HTTP/1.x.  This
@@ -610,14 +703,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
    major inefficiency in HTTP/1.1, HTTP/2 also introduced HPACK
    [RFC7541], a custom compression scheme which operates on key-value
    pairs rather than text blocks.  HTTP/2 frame types which transport
-
-
-
-Bishop                 Expires September 17, 2016              [Page 11]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    headers always carry HPACK header block fragments rather than an
    uncompressed key-value dictionary.
 
@@ -635,6 +720,15 @@ Internet-Draft             Disentangling HTTP                 March 2016
    govern.  In HTTP/2, this would cause severe head-of-line blocking due
    to the increased parallelism, and so the control must be exerted at a
    higher level.
+
+
+
+
+
+Bishop                 Expires September 23, 2016              [Page 13]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
 
    Another drawback to the application-layer multiplexing approach is
    the fact that TCP's congestion-avoidance mechanisms cannot identify
@@ -666,14 +760,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
    this means keeping additional state about which requests have already
    been processed.
 
-
-
-
-Bishop                 Expires September 17, 2016              [Page 12]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    Some applications above HTTP are able to provide their own loss-
    recovery messages, and therefore do not actually require the
    guarantees that HTTP provides.  HTTP over UDP Multicast is targeted
@@ -692,6 +778,14 @@ Internet-Draft             Disentangling HTTP                 March 2016
       primary application protocol, QUIC builds on decades of transport
       and security experience, and implements mechanisms that make it
       attractive as a modern general-purpose transport.  QUIC provides
+
+
+
+Bishop                 Expires September 23, 2016              [Page 14]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
       multiplexing and flow control equivalent to HTTP/2, security
       equivalent to TLS, and connection semantics, reliability, and
       congestion control equivalent to TCP.
@@ -721,15 +815,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
    not always been successfully achieved.  New capabilites in transports
    have required new expressions at the HTTP layer to take advantage of
    them, and mappings have defined concepts which are tightly bound to
-
-
-
-
-Bishop                 Expires September 17, 2016              [Page 13]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    the underlying transport without clearly separating them from the
    semantics of HTTP.
 
@@ -750,10 +835,21 @@ Internet-Draft             Disentangling HTTP                 March 2016
               November 1999,
               <http://tools.ietf.org/html/draft-goland-http-udp-01>.
 
+
+
+Bishop                 Expires September 23, 2016              [Page 15]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
+
    [I-D.ietf-core-block]
               Bormann, C. and Z. Shelby, "Block-wise transfers in CoAP",
-              draft-ietf-core-block-18 (work in progress), September
-              2015.
+              draft-ietf-core-block-19 (work in progress), March 2016.
+
+   [I-D.ietf-httpbis-alt-svc]
+              mnot, m., McManus, P., and J. Reschke, "HTTP Alternative
+              Services", draft-ietf-httpbis-alt-svc-14 (work in
+              progress), March 2016.
 
    [I-D.natarajan-http-over-sctp]
               Natarajan, P., Amer, P., Leighton, J., and F. Baker,
@@ -777,18 +873,14 @@ Internet-Draft             Disentangling HTTP                 March 2016
               DOI 10.17487/RFC1945, May 1996,
               <http://www.rfc-editor.org/info/rfc1945>.
 
-
-
-
-
-Bishop                 Expires September 17, 2016              [Page 14]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    [RFC2818]  Rescorla, E., "HTTP Over TLS", RFC 2818,
               DOI 10.17487/RFC2818, May 2000,
               <http://www.rfc-editor.org/info/rfc2818>.
+
+   [RFC3986]  Berners-Lee, T., Fielding, R., and L. Masinter, "Uniform
+              Resource Identifier (URI): Generic Syntax", STD 66,
+              RFC 3986, DOI 10.17487/RFC3986, January 2005,
+              <http://www.rfc-editor.org/info/rfc3986>.
 
    [RFC4960]  Stewart, R., Ed., "Stream Control Transmission Protocol",
               RFC 4960, DOI 10.17487/RFC4960, September 2007,
@@ -798,6 +890,13 @@ Internet-Draft             Disentangling HTTP                 March 2016
               (TLS) Protocol Version 1.2", RFC 5246,
               DOI 10.17487/RFC5246, August 2008,
               <http://www.rfc-editor.org/info/rfc5246>.
+
+
+
+Bishop                 Expires September 23, 2016              [Page 16]
+
+Internet-Draft             Disentangling HTTP                 March 2016
+
 
    [RFC6347]  Rescorla, E. and N. Modadugu, "Datagram Transport Layer
               Security Version 1.2", RFC 6347, DOI 10.17487/RFC6347,
@@ -832,16 +931,6 @@ Internet-Draft             Disentangling HTTP                 March 2016
               <http://upnp.org/specs/arch/
               UPnP-arch-DeviceArchitecture-v2.0.pdf>.
 
-
-
-
-
-
-Bishop                 Expires September 17, 2016              [Page 15]
-
-Internet-Draft             Disentangling HTTP                 March 2016
-
-
    [w3c-smux]
               Nielsen, H., "SMUX Protocol Specification", July 1998,
               <http://www.w3.org/TR/WD-mux>.
@@ -860,37 +949,4 @@ Author's Address
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Bishop                 Expires September 17, 2016              [Page 16]
+Bishop                 Expires September 23, 2016              [Page 17]

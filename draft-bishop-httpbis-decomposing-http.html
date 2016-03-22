@@ -454,16 +454,18 @@ ul.toc a:first-child {
   <link href="#rfc.toc" rel="Contents"/>
 <link href="#rfc.section.1" rel="Chapter" title="1 Introduction"/>
 <link href="#rfc.section.2" rel="Chapter" title="2 The Semantic Layer"/>
+<link href="#rfc.section.2.1" rel="Chapter" title="2.1 Causality and Ordering at the Semantic Layer"/>
 <link href="#rfc.section.3" rel="Chapter" title="3 Transport Services Required"/>
-<link href="#rfc.section.3.1" rel="Chapter" title="3.1 Reliable delivery"/>
-<link href="#rfc.section.3.2" rel="Chapter" title="3.2 In-order delivery"/>
-<link href="#rfc.section.3.3" rel="Chapter" title="3.3 Partial delivery"/>
-<link href="#rfc.section.3.4" rel="Chapter" title="3.4 Separate request/response, metadata, and payload"/>
-<link href="#rfc.section.3.5" rel="Chapter" title="3.5 Flow control and throttling"/>
-<link href="#rfc.section.3.6" rel="Chapter" title="3.6 Other desirable properties"/>
-<link href="#rfc.section.3.6.1" rel="Chapter" title="3.6.1 Parallelism"/>
-<link href="#rfc.section.3.6.2" rel="Chapter" title="3.6.2 Security"/>
-<link href="#rfc.section.3.6.3" rel="Chapter" title="3.6.3 Efficiency"/>
+<link href="#rfc.section.3.1" rel="Chapter" title="3.1 Addressing"/>
+<link href="#rfc.section.3.2" rel="Chapter" title="3.2 Reliable delivery"/>
+<link href="#rfc.section.3.3" rel="Chapter" title="3.3 In-order delivery"/>
+<link href="#rfc.section.3.4" rel="Chapter" title="3.4 Partial delivery"/>
+<link href="#rfc.section.3.5" rel="Chapter" title="3.5 Framing"/>
+<link href="#rfc.section.3.6" rel="Chapter" title="3.6 Connection management"/>
+<link href="#rfc.section.3.7" rel="Chapter" title="3.7 Other desirable properties"/>
+<link href="#rfc.section.3.7.1" rel="Chapter" title="3.7.1 Parallelism"/>
+<link href="#rfc.section.3.7.2" rel="Chapter" title="3.7.2 Security"/>
+<link href="#rfc.section.3.7.3" rel="Chapter" title="3.7.3 Efficiency"/>
 <link href="#rfc.section.4" rel="Chapter" title="4 The Transport Adaptation Layer"/>
 <link href="#rfc.section.4.1" rel="Chapter" title="4.1 HTTP/1.x over TCP"/>
 <link href="#rfc.section.4.1.1" rel="Chapter" title="4.1.1 Metadata and framing"/>
@@ -487,7 +489,7 @@ ul.toc a:first-child {
 
   <meta name="dct.creator" content="Bishop, M." />
   <meta name="dct.identifier" content="urn:ietf:id:draft-bishop-httpbis-decomposing-http-latest" />
-  <meta name="dct.issued" scheme="ISO8601" content="2016-3-16" />
+  <meta name="dct.issued" scheme="ISO8601" content="2016-3-22" />
   <meta name="dct.abstract" content="The Hypertext Transfer Protocol in its various versions combines concepts of both an application and transport-layer protocol. As this group contemplates employing alternate transport protocols underneath HTTP, this document attempts to delineate the boundaries between these functions to define a shared vocabulary in discussing the revision and/or replacement of one or more of these components." />
   <meta name="description" content="The Hypertext Transfer Protocol in its various versions combines concepts of both an application and transport-layer protocol. As this group contemplates employing alternate transport protocols underneath HTTP, this document attempts to delineate the boundaries between these functions to define a shared vocabulary in discussing the revision and/or replacement of one or more of these components." />
 
@@ -508,10 +510,10 @@ ul.toc a:first-child {
 </tr>
 <tr>
   <td class="left">Intended status: Informational</td>
-  <td class="right">March 16, 2016</td>
+  <td class="right">March 22, 2016</td>
 </tr>
 <tr>
-  <td class="left">Expires: September 17, 2016</td>
+  <td class="left">Expires: September 23, 2016</td>
   <td class="right"></td>
 </tr>
 
@@ -532,7 +534,7 @@ ul.toc a:first-child {
 <p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
 <p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
 <p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
-<p>This Internet-Draft will expire on September 17, 2016.</p>
+<p>This Internet-Draft will expire on September 23, 2016.</p>
 <h1 id="rfc.copyrightnotice">
   <a href="#rfc.copyrightnotice">Copyright Notice</a>
 </h1>
@@ -546,16 +548,18 @@ ul.toc a:first-child {
 
   	<li>1.   <a href="#rfc.section.1">Introduction</a></li>
 <li>2.   <a href="#rfc.section.2">The Semantic Layer</a></li>
-<li>3.   <a href="#rfc.section.3">Transport Services Required</a></li>
-<ul><li>3.1.   <a href="#rfc.section.3.1">Reliable delivery</a></li>
-<li>3.2.   <a href="#rfc.section.3.2">In-order delivery</a></li>
-<li>3.3.   <a href="#rfc.section.3.3">Partial delivery</a></li>
-<li>3.4.   <a href="#rfc.section.3.4">Separate request/response, metadata, and payload</a></li>
-<li>3.5.   <a href="#rfc.section.3.5">Flow control and throttling</a></li>
-<li>3.6.   <a href="#rfc.section.3.6">Other desirable properties</a></li>
-<ul><li>3.6.1.   <a href="#rfc.section.3.6.1">Parallelism</a></li>
-<li>3.6.2.   <a href="#rfc.section.3.6.2">Security</a></li>
-<li>3.6.3.   <a href="#rfc.section.3.6.3">Efficiency</a></li>
+<ul><li>2.1.   <a href="#rfc.section.2.1">Causality and Ordering at the Semantic Layer</a></li>
+</ul><li>3.   <a href="#rfc.section.3">Transport Services Required</a></li>
+<ul><li>3.1.   <a href="#rfc.section.3.1">Addressing</a></li>
+<li>3.2.   <a href="#rfc.section.3.2">Reliable delivery</a></li>
+<li>3.3.   <a href="#rfc.section.3.3">In-order delivery</a></li>
+<li>3.4.   <a href="#rfc.section.3.4">Partial delivery</a></li>
+<li>3.5.   <a href="#rfc.section.3.5">Framing</a></li>
+<li>3.6.   <a href="#rfc.section.3.6">Connection management</a></li>
+<li>3.7.   <a href="#rfc.section.3.7">Other desirable properties</a></li>
+<ul><li>3.7.1.   <a href="#rfc.section.3.7.1">Parallelism</a></li>
+<li>3.7.2.   <a href="#rfc.section.3.7.2">Security</a></li>
+<li>3.7.3.   <a href="#rfc.section.3.7.3">Efficiency</a></li>
 </ul></ul><li>4.   <a href="#rfc.section.4">The Transport Adaptation Layer</a></li>
 <ul><li>4.1.   <a href="#rfc.section.4.1">HTTP/1.x over TCP</a></li>
 <ul><li>4.1.1.   <a href="#rfc.section.4.1.1">Metadata and framing</a></li>
@@ -594,11 +598,15 @@ ul.toc a:first-child {
 <p id="rfc.section.2.p.3">Each message (request or response) has associated metadata, called &#8220;headers,&#8221; which provide additional information about the operation.  In a request this might include client identification, credentials authorizing the client to request the action, or preferences about how the client would prefer the server handle the action.  In a response, this might include information about the resulting data, modifications to the cacheability of the response, details about how the server performed the action, or details of the reason the server declined to perform the action.</p>
 <p id="rfc.section.2.p.4">The headers are key-value pairs, with rules defining how keys which occur multiple times should be handled.  Due to artifacts of existing usage, these rules vary from key to key.  For similar legacy reasons, there is no uniform structure of the values across all keys.  Keys are case-insensitive ASCII strings, while values are sequences of octets typically interpreted as ASCII.  Many headers are defined by the HTTP RFCs, but the space is not constrained and is frequently extended with little or no notice.  &#8220;Trailing&#8221; headers are split, with the key declared in advance, but the value coming only after the body has been transferred.</p>
 <p id="rfc.section.2.p.5">Each message, whether request or response, also has an optional body.  The presence and content of the body will vary based on the action requested and the headers provided.</p>
+<h1 id="rfc.section.2.1"><a href="#rfc.section.2.1">2.1.</a> <a href="#causality-and-ordering-at-the-semantic-layer" id="causality-and-ordering-at-the-semantic-layer">Causality and Ordering at the Semantic Layer</a></h1>
+<p id="rfc.section.2.1.p.1">Because HTTP is fundamentally a request-response protocol, the request is assumed always to have preceded and triggered the response. While it is legal for a server to issue a response while the request is still in progress, this is conceptually equal to issuing the response after the request is complete.  Servers may be able to identify error conditions and send early responses with errors; early successes are unlikely.</p>
+<p id="rfc.section.2.1.p.2">There is no such thing as a response without a request, though HTTP/2 push stretches this concept by allowing the server to specify both the request and the response. This is an extension of classic HTTP semantics as a performance optimization.</p>
 <h1 id="rfc.section.3"><a href="#rfc.section.3">3.</a> <a href="#transport" id="transport">Transport Services Required</a></h1>
 <p id="rfc.section.3.p.1">The HTTP Semantic Layer depends on the availability of several services from its lower layer:</p>
 <p/>
 
 <ul>
+  <li>Addressing</li>
   <li>Reliable delivery</li>
   <li>In-order delivery</li>
   <li>Partial delivery</li>
@@ -606,15 +614,19 @@ ul.toc a:first-child {
   <li>Flow control and throttling</li>
 </ul>
 <p id="rfc.section.3.p.3">In this section, each of these properties will be discussed at a high level with a focus on why HTTP requires these properties to be present.  The <a href="#transport-adaptation">next section</a> <cite title="NONE">[transport-adaptation]</cite> will discuss how various HTTP mappings have handled the absence of these required services in different transports.</p>
-<h1 id="rfc.section.3.1"><a href="#rfc.section.3.1">3.1.</a> <a href="#reliable-delivery" id="reliable-delivery">Reliable delivery</a></h1>
-<p id="rfc.section.3.1.p.1">HTTP does not provide the concept to higher layers that fragments of data were received while others were not.  If a request is sent, it is assumed that either a response will arrive or the transport will report an error.  HTTP itself is not concerned with any intermediate states.</p>
-<p id="rfc.section.3.1.p.2">There are many ways for a transport to provide reliable delivery of messages. This may take the form of loss recovery, where the loss of packets is detected and the corresponding information retransmitted.  Alternately, a transport may proactively send extra information so that the data stream is tolerant to some loss &#8211; the full message can be reconstructed after receipt of a sufficient fraction of the transmission.</p>
-<p id="rfc.section.3.1.p.3">It is worth noting that some consumers of HTTP have relaxed requirements in this space &#8211; while HTTP itself has no notion of lossy delivery, some mappings do have weakened guarantees and are only appropriate for scenarios where those weakened guarantees are acceptable.</p>
-<h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#in-order-delivery" id="in-order-delivery">In-order delivery</a></h1>
-<p id="rfc.section.3.2.p.1">The headers of each message must arrive before any body, since they dictate how the body will be processed.  The body is typically exposed as a bytestream which can be read from sequentially, though there are some consumers who are able to use incomplete fragments of certain resource types.</p>
-<p id="rfc.section.3.2.p.2">Regardless of the ability to surface and use fragmentary pieces of an HTTP message, the HTTP layer requires the transport be able to ultimately provide a correct ordering and full reconstruction of each message.</p>
-<h1 id="rfc.section.3.3"><a href="#rfc.section.3.3">3.3.</a> <a href="#partial-delivery" id="partial-delivery">Partial delivery</a></h1>
-<p id="rfc.section.3.3.p.1">While only some users of HTTP (client or server) are able to deal with unordered fragments of an HTTP message, it is almost universally necessary to deal with HTTP messages in pieces.  There are multiple reasons why that may be necessary:</p>
+<h1 id="rfc.section.3.1"><a href="#rfc.section.3.1">3.1.</a> <a href="#addressing" id="addressing">Addressing</a></h1>
+<p id="rfc.section.3.1.p.1">HTTP identifies resources by URI <a href="#RFC3986">[RFC3986]</a>.  While the path and query portions of a URI are handled entirely by HTTP, the authority portion needs to be resolvable by the transport.  This may include IP literals (both IPv4 and IPv6), DNS hostnames, or other identifiers outside the scope of DNS.  The authority portion also typically includes a port number, either express or implied.</p>
+<p id="rfc.section.3.1.p.2">More recent proposals <a href="#I-D.ietf-httpbis-alt-svc">[I-D.ietf-httpbis-alt-svc]</a> have enabled the HTTP origin to be separated from the network-resolved hostname and port, but HTTP still relies on the mapping having the ability to create a session with a representative of a particular origin.</p>
+<h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#reliable-delivery" id="reliable-delivery">Reliable delivery</a></h1>
+<p id="rfc.section.3.2.p.1">HTTP does not provide the concept to higher layers that fragments of data were received while others were not.  If a request is sent, it is assumed that either a response will arrive or the transport will report an error.  HTTP itself is not concerned with any intermediate states.</p>
+<p id="rfc.section.3.2.p.2">There are many ways for a transport to provide reliable delivery of messages. This may take the form of loss recovery, where the loss of packets is detected and the corresponding information retransmitted.  Alternately, a transport may proactively send extra information so that the data stream is tolerant to some loss &#8211; the full message can be reconstructed after receipt of a sufficient fraction of the transmission.</p>
+<p id="rfc.section.3.2.p.3">It is worth noting that some consumers of HTTP have relaxed requirements in this space &#8211; while HTTP itself has no notion of lossy delivery, some mappings do have weakened guarantees and are only appropriate for scenarios where those weakened guarantees are acceptable.</p>
+<h1 id="rfc.section.3.3"><a href="#rfc.section.3.3">3.3.</a> <a href="#in-order-delivery" id="in-order-delivery">In-order delivery</a></h1>
+<p id="rfc.section.3.3.p.1">The headers of each message must arrive before any body, since they dictate how the body will be processed.  The body is typically exposed as a bytestream which can be read from sequentially, though there are some consumers who are able to use incomplete fragments of certain resource types.</p>
+<p id="rfc.section.3.3.p.2">Regardless of the ability to surface and use fragmentary pieces of an HTTP message, the HTTP layer requires the transport be able to ultimately provide a correct ordering and full reconstruction of each message.</p>
+<h1 id="rfc.section.3.4"><a href="#rfc.section.3.4">3.4.</a> <a href="#partial-delivery" id="partial-delivery">Partial delivery</a></h1>
+<p id="rfc.section.3.4.p.1">While only some users of HTTP (client or server) are able to deal with unordered fragments of an HTTP message, it is almost universally necessary to deal with HTTP messages in pieces. The headers must typically be processed in order to have the context to interpret the body, and various scenarios require processing the body in incremental chunks.</p>
+<p id="rfc.section.3.4.p.2">There are multiple reasons why that may be necessary:</p>
 <p/>
 
 <ul>
@@ -622,24 +634,27 @@ ul.toc a:first-child {
   <li>The beginning of a request may be sufficient to generate a response (error due to lack of authorization)</li>
   <li>The message may be constructed incrementally, sending each segment as it becomes available</li>
 </ul>
-<p id="rfc.section.3.3.p.3">Regardless, HTTP needs the transport to begin sending the message before the end of the message is available.</p>
-<h1 id="rfc.section.3.4"><a href="#rfc.section.3.4">3.4.</a> <a href="#separate-requestresponse-metadata-and-payload" id="separate-requestresponse-metadata-and-payload">Separate request/response, metadata, and payload</a></h1>
-<p id="rfc.section.3.4.p.1">Any protocol defines how the semantics of the protocol are mapped onto the wire in a transport.  Most transports are either bytestreams or message-based, meaning that higher-layer concepts must be laid out in a reasonable structure within the stream or message.  Each HTTP request or response contains metadata about the message (headers) and an optional body.</p>
-<p id="rfc.section.3.4.p.2">These are separate constructs in HTTP, and mechanisms to carry them and keep them appropriately associated must be provided. Note that it&#8217;s not actually expected that any <em>generic</em> transport layer would or should have this property, but is nonetheless involved in transporting HTTP messages.</p>
-<h1 id="rfc.section.3.5"><a href="#rfc.section.3.5">3.5.</a> <a href="#flow-control-and-throttling" id="flow-control-and-throttling">Flow control and throttling</a></h1>
-<p id="rfc.section.3.5.p.1">Flow control is a necessary property of any transport.  Because no network can handle an uncontrolled burst of data at infinite speeds, the transport must determine an appropriate sustained data rate for the intervening network.  Even in the presence of a nearly-infinite network capacity, the remote server will also have limits on its ability to consume data.</p>
-<p id="rfc.section.3.5.p.2">In order to avoid overwhelming either the network or the server, HTTP requires a mechanism to limit sending data rates as well as to limit the rate of new requests going to a server.  Although it is optimal for a server to know about all outstanding client requests (even if it chooses not to work on them immediately), the server may wish to protect itself by limiting the memory commitment to outstanding data or requests.  The transport should facilitate such protection on the part of a server (or client, in certain scenarios).</p>
-<h1 id="rfc.section.3.6"><a href="#rfc.section.3.6">3.6.</a> <a href="#other-desirable-properties" id="other-desirable-properties">Other desirable properties</a></h1>
-<p id="rfc.section.3.6.p.1">There are several properties not properly required for the implementation of HTTP, but which users of HTTP have come to assume are present.</p>
-<h1 id="rfc.section.3.6.1"><a href="#rfc.section.3.6.1">3.6.1.</a> <a href="#parallelism" id="parallelism">Parallelism</a></h1>
-<p id="rfc.section.3.6.1.p.1">Because a client will often desire a single server to perform multiple actions at once, all HTTP mappings provide the ability to deliver requests in parallel and allow the server to respond to each request as the actions complete.  Head-of-line blocking is a particular problem here that transports must attempt to avoid &#8211; client requests should ideally reach the server as quickly as possible, allowing the server to choose the correct order in which to handle the requests (with input from the client).  Any situation in which a request remains unknown to the server until another request completes is suboptimal.</p>
-<h1 id="rfc.section.3.6.2"><a href="#rfc.section.3.6.2">3.6.2.</a> <a href="#security" id="security">Security</a></h1>
-<p id="rfc.section.3.6.2.p.1">Integrity and confidentiality are valuable services for communication over the Internet, and HTTP is no exception.  While authentication, message integrity, and secrecy are not inherently <em>required</em> for the implementation of HTTP, they are advantageous properties for any mapping to have, so that each party can be sure that what they received is what the other party sent.</p>
-<p id="rfc.section.3.6.2.p.2">Privacy, the control of what data is leaked to the peer and/or third parties, is also a desirable attribute.  However, this extends well beyond the scope of any particular mapping and into the use of HTTP.</p>
-<p id="rfc.section.3.6.2.p.3">TLS <a href="#RFC5246">[RFC5246]</a> is commonly used in mappings to provide this service, and itself requires reliable, in-order delivery.  When those services are not provided by the underlying transport, the mapping must either provide those services to TLS as well as HTTP (as in QUIC) or a variant of TLS which provides those services for itself must be substituted (DTLS <a href="#RFC6347">[RFC6347]</a>, as used in CoAP).</p>
-<h1 id="rfc.section.3.6.3"><a href="#rfc.section.3.6.3">3.6.3.</a> <a href="#efficiency" id="efficiency">Efficiency</a></h1>
-<p id="rfc.section.3.6.3.p.1">While it would be technically possible to define HTTP over a highly inefficient transport or mapping (e.g. format messages in Baudot code, transporting them to the server using avian carriers as in <a href="#RFC1149">[RFC1149]</a>), there is little reason for applications to use such inefficient mappings when efficient transport mappings exist.</p>
-<p id="rfc.section.3.6.3.p.2">Efficiency can be characterized on many levels:</p>
+<p id="rfc.section.3.4.p.4">Regardless, HTTP needs the transport to begin sending the message before the end of the message is available.</p>
+<h1 id="rfc.section.3.5"><a href="#rfc.section.3.5">3.5.</a> <a href="#framing" id="framing">Framing</a></h1>
+<p id="rfc.section.3.5.p.1">Any protocol defines how the semantics of the protocol are mapped onto the wire in a transport.  Most transports are either bytestreams or message-based, meaning that higher-layer concepts must be laid out in a reasonable structure within the stream or message.  Each HTTP request or response contains metadata about the message (headers) and an optional body.  There must also be a way to identify the end of the HTTP message.</p>
+<p id="rfc.section.3.5.p.2">These are separate constructs in HTTP, and mechanisms to carry them and keep them appropriately associated must be provided. Note that it&#8217;s not actually expected that any <em>generic</em> transport layer would or should have this property, but is nonetheless involved in transporting HTTP messages.</p>
+<h1 id="rfc.section.3.6"><a href="#rfc.section.3.6">3.6.</a> <a href="#connection-management" id="connection-management">Connection management</a></h1>
+<p id="rfc.section.3.6.p.1">Because HTTP is request-response-based, there is a logical session between the client and the server, even if the underlying transport does not establish one.  There must be a way to open this logical session and moderate usage once opened.</p>
+<p id="rfc.section.3.6.p.2">Flow control is a necessary property of any transport.  Because no network can handle an uncontrolled burst of data at infinite speeds, the transport must determine an appropriate sustained data rate for the intervening network.  Even in the presence of a nearly-infinite network capacity, the remote server will also have limits on its ability to consume data.</p>
+<p id="rfc.section.3.6.p.3">In order to avoid overwhelming either the network or the server, HTTP requires a mechanism to limit sending data rates as well as to limit the rate of new requests going to a server.  Although it is optimal for a server to know about all outstanding client requests (even if it chooses not to work on them immediately), the server may wish to protect itself by limiting the memory commitment to outstanding data or requests.  The transport should facilitate such protection on the part of a server (or client, in certain scenarios).</p>
+<p id="rfc.section.3.6.p.4">Notably, while there may be ways to distinguish graceful or abrupt session termination depending on the mapping and scenario, these are not HTTP semantic concepts. An HTTP &#8220;session&#8221; is complete when all outstanding requests have received responses and no new requests are issued. Much of the effort in mappings around session termination ultimately amounts to distinguishing between a request which failed and a request which was effectively never sent.</p>
+<h1 id="rfc.section.3.7"><a href="#rfc.section.3.7">3.7.</a> <a href="#other-desirable-properties" id="other-desirable-properties">Other desirable properties</a></h1>
+<p id="rfc.section.3.7.p.1">There are several properties not properly required for the implementation of HTTP, but which users of HTTP have come to assume are present.</p>
+<h1 id="rfc.section.3.7.1"><a href="#rfc.section.3.7.1">3.7.1.</a> <a href="#parallelism" id="parallelism">Parallelism</a></h1>
+<p id="rfc.section.3.7.1.p.1">Because a client will often desire a single server to perform multiple actions at once, all HTTP mappings provide the ability to deliver requests in parallel and allow the server to respond to each request as the actions complete.  Head-of-line blocking is a particular problem here that transports must attempt to avoid &#8211; client requests should ideally reach the server as quickly as possible, allowing the server to choose the correct order in which to handle the requests (with input from the client).  Any situation in which a request remains unknown to the server until another request completes is suboptimal.</p>
+<p id="rfc.section.3.7.1.p.2">The presence of parallelism necessarily implies some choice by the transport and the peers about the allocation of resources amongst the various simultaneous requests.  This is true both on the HTTP peers and intermediaries (allocation of CPU, memory resources) and on the network itself (allocation of bandwidth between flows).  It is beneficial, though not required, to support some relative priority between multiple ongoing activities.</p>
+<h1 id="rfc.section.3.7.2"><a href="#rfc.section.3.7.2">3.7.2.</a> <a href="#security" id="security">Security</a></h1>
+<p id="rfc.section.3.7.2.p.1">Integrity and confidentiality are valuable services for communication over the Internet, and HTTP is no exception.  While authentication, message integrity, and secrecy are not inherently <em>required</em> for the implementation of HTTP, they are advantageous properties for any mapping to have, so that each party can be sure that what they received is what the other party sent.</p>
+<p id="rfc.section.3.7.2.p.2">Privacy, the control of what data is leaked to the peer and/or third parties, is also a desirable attribute.  However, this extends well beyond the scope of any particular mapping and into the use of HTTP.</p>
+<p id="rfc.section.3.7.2.p.3">TLS <a href="#RFC5246">[RFC5246]</a> is commonly used in mappings to provide this service, and itself requires reliable, in-order delivery.  When those services are not provided by the underlying transport, the mapping must either provide those services to TLS as well as HTTP (as in QUIC) or a variant of TLS which provides those services for itself must be substituted (DTLS <a href="#RFC6347">[RFC6347]</a>, as used in CoAP).</p>
+<h1 id="rfc.section.3.7.3"><a href="#rfc.section.3.7.3">3.7.3.</a> <a href="#efficiency" id="efficiency">Efficiency</a></h1>
+<p id="rfc.section.3.7.3.p.1">While it would be technically possible to define HTTP over a highly inefficient transport or mapping (e.g. format messages in Baudot code, transporting them to the server using avian carriers as in <a href="#RFC1149">[RFC1149]</a>), there is little reason for applications to use such inefficient mappings when efficient transport mappings exist.</p>
+<p id="rfc.section.3.7.3.p.2">Efficiency can be characterized on many levels:</p>
 <p/>
 
 <ul>
@@ -647,6 +662,7 @@ ul.toc a:first-child {
   <li>Reducing the time from request generation to response receipt</li>
   <li>Reducing the amount of computation or memory required to process or route a request</li>
   <li>Reducing the power consumption required to generate or process a request</li>
+  <li>Reducing the time from error occurrence to error detection</li>
 </ul>
 <h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#transport-adaptation" id="transport-adaptation">The Transport Adaptation Layer</a></h1>
 <p id="rfc.section.4.p.1">No present transport over which HTTP has been mapped actually provides all of the services on which the HTTP Semantic Layer depends.  In order to compensate for the services not provided by a given underlying transport, each mapping of HTTP onto a new transport must define an intermediate layer implementing the missing services in order to enable the mapping, as well as any additional features the mapping finds to be desirable.</p>
@@ -662,6 +678,13 @@ ul.toc a:first-child {
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td class="left">Addressing</td>
+      <td class="center">X</td>
+      <td class="center">X</td>
+      <td class="center">X</td>
+      <td class="center">*</td>
+    </tr>
     <tr>
       <td class="left">Reliable delivery</td>
       <td class="center">X</td>
@@ -684,7 +707,7 @@ ul.toc a:first-child {
       <td class="center">X</td>
     </tr>
     <tr>
-      <td class="left">Separate metadata and payload</td>
+      <td class="left">Framing</td>
       <td class="center"/>
       <td class="center"/>
       <td class="center"/>
@@ -769,7 +792,13 @@ ul.toc a:first-child {
       <td class="reference">
         <b id="I-D.ietf-core-block">[I-D.ietf-core-block]</b>
       </td>
-      <td class="top"><a>Bormann, C.</a> and <a>Z. Shelby</a>, "<a href="http://tools.ietf.org/html/draft-ietf-core-block-18">Block-wise transfers in CoAP</a>", Internet-Draft draft-ietf-core-block-18, September 2015.</td>
+      <td class="top"><a>Bormann, C.</a> and <a>Z. Shelby</a>, "<a href="http://tools.ietf.org/html/draft-ietf-core-block-19">Block-wise transfers in CoAP</a>", Internet-Draft draft-ietf-core-block-19, March 2016.</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="I-D.ietf-httpbis-alt-svc">[I-D.ietf-httpbis-alt-svc]</b>
+      </td>
+      <td class="top"><a>mnot, m.</a>, <a>McManus, P.</a> and <a>J. Reschke</a>, "<a href="http://tools.ietf.org/html/draft-ietf-httpbis-alt-svc-14">HTTP Alternative Services</a>", Internet-Draft draft-ietf-httpbis-alt-svc-14, March 2016.</td>
     </tr>
     <tr>
       <td class="reference">
@@ -800,6 +829,12 @@ ul.toc a:first-child {
         <b id="RFC2818">[RFC2818]</b>
       </td>
       <td class="top"><a>Rescorla, E.</a>, "<a href="http://tools.ietf.org/html/rfc2818">HTTP Over TLS</a>", RFC 2818, DOI 10.17487/RFC2818, May 2000.</td>
+    </tr>
+    <tr>
+      <td class="reference">
+        <b id="RFC3986">[RFC3986]</b>
+      </td>
+      <td class="top"><a>Berners-Lee, T.</a>, <a>Fielding, R.</a> and <a>L. Masinter</a>, "<a href="http://tools.ietf.org/html/rfc3986">Uniform Resource Identifier (URI): Generic Syntax</a>", STD 66, RFC 3986, DOI 10.17487/RFC3986, January 2005.</td>
     </tr>
     <tr>
       <td class="reference">
